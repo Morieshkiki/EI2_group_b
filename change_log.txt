@@ -1,0 +1,7 @@
+0610_4
+
+0610_3
+- Added sensors_dashboard.html
+- Updated @router.get("/") in sensor_router.py to load in sensors_dashboard.html
+- Added sensor coordinate values based on where the model is picked
+- Added button to open sensor dashboard

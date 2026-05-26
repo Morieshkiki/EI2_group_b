@@ -1,0 +1,4 @@
+Building Dashboard:
+
+- Fix the scrolling while zooming
+- 

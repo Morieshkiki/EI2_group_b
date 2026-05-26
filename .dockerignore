@@ -1,0 +1,10 @@
+node_modules
+.venv
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.log
+pip_install.log
+tests
+xeokit-bim-viewer-master/node_modules
