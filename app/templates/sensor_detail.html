@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Sensor {{ sensor.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h4>Sensor: {{ sensor.name }}</h4>
+    
+    <table class="striped">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <td>{{ sensor.id }}</td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td>{{ sensor.name }}</td>
+            </tr>
+            <tr>
+                <th>Type</th>
+                <td>{{ sensor.type }}</td>
+            </tr>
+            <tr>
+                <th>Building</th>
+                <td>{{ building_name }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section">
+        <a class="btn amber darken-2 modal-trigger" href="#edit-sensor-modal">
+            <i class="material-icons left">edit</i> Edit
+        </a>
+        <button class="btn red" id="delete-sensor-btn">
+            <i class="material-icons left">delete</i> Delete
+        </button>
+        <a class="btn teal" href="/sensors/{{ sensor.id }}/report" target="_blank">
+            <i class="material-icons left">picture_as_pdf</i>Generate PDF Report
+        </a>
+    </div>
+</div>
+
+<div class="section">
+    <h5>Sensor Readings</h5>
+    <div class="input-field" style="max-width: 200px;">
+        <select id="readingLimitSelector">
+            <option value="10">Last 10</option>
+            <option value="20" selected>Last 20</option>
+            <option value="50">Last 50</option>
+        </select>
+        <label for="readingLimitSelector">Select Reading Range</label>
+        </div>
+    <canvas id="sensorChart" width="600" height="300"></canvas>
+</div>
+
+
+<!-- Modal for Editing Sensor -->
+<div id="edit-sensor-modal" class="modal">
+  <div class="modal-content">
+    <h4>Edit Sensor</h4>
+    <form id="editSensorForm">
+      <div class="input-field">
+        <input id="edit_name" name="name" type="text" value="{{ sensor.name }}" required>
+        <label for="edit_name" class="active">Name</label>
+      </div>
+      <div class="input-field">
+        <select id="edit_type" name="type" required>
+            <option value="temperature" {% if sensor.type == "temperature" %}selected{% endif %}>Temperature</option>
+            <option value="humidity" {% if sensor.type == "humidity" %}selected{% endif %}>Humidity</option>
+            <option value="combo" {% if sensor.type == "combo" %}selected{% endif %}>Combo (Temp + Hum)</option>
+         </select>
+        <label for="edit_type">Type</label>
+        </div>
+      <button type="submit" class="btn waves-effect waves-light">Save Changes</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script id="sensor-data" type="application/json">
+  {{ sensor | tojson }}
+</script>
+
+<script>
+let sensor = null;
+
+document.addEventListener("DOMContentLoaded", function () {
+    sensor = JSON.parse(document.getElementById("sensor-data").textContent);
+
+    let chartInstance = null;
+    let currentLimit = 20;
+
+    const limitSelector = document.getElementById("readingLimitSelector");
+    limitSelector.addEventListener("change", () => {
+        currentLimit = parseInt(limitSelector.value);
+        if (sensor && sensor.id) {
+            loadChart(sensor.id);
+        }
+    });
+
+    async function loadChart(sensorId) {
+        const res = await fetch(`/sensors/readings/${sensorId}/json?limit=${currentLimit}`);
+        const data = await res.json();
+
+        const readings = data.readings || [];
+
+        const labels = readings.map(r => new Date(r.timestamp).toLocaleTimeString());
+        const tempData = readings.map(r => r.temperature);
+        const humData = readings.map(r => r.humidity);
+
+        const ctx = document.getElementById("sensorChart").getContext("2d");
+
+        if (chartInstance) {
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = tempData;
+            chartInstance.data.datasets[1].data = humData;
+            chartInstance.update();
+        } else {
+            chartInstance = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "Temperature (°C)",
+                            data: tempData,
+                            borderColor: "red",
+                            fill: false
+                        },
+                        {
+                            label: "Humidity (%)",
+                            data: humData,
+                            borderColor: "blue",
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+    }
+
+    M.Modal.init(document.querySelectorAll('.modal'));
+    M.FormSelect.init(document.querySelectorAll('select'));
+
+    if (sensor && sensor.id) {
+        loadChart(sensor.id);
+        setInterval(() => loadChart(sensor.id), 30000);
+    }
+
+    document.getElementById("editSensorForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const updatedSensor = {
+            id: sensor.id,
+            name: document.getElementById("edit_name").value,
+            type: document.getElementById("edit_type").value,
+            building_id: sensor.building_id,
+            sensor_coord: sensor.sensor_coord
+        };
+
+        fetch(`/sensors/${sensor.id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedSensor)
+        }).then(res => {
+            if (res.ok) {
+                M.toast({ html: 'Sensor updated successfully!' });
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                M.toast({ html: 'Failed to update sensor.' });
+            }
+        });
+    });
+
+    document.getElementById("delete-sensor-btn").addEventListener("click", function () {
+            if (!confirm("Are you sure you want to delete this sensor?")) return;
+
+            fetch(`/sensors/${sensor.id}`, {
+                method: "DELETE",
+            }).then(res => {
+                if (res.ok) {
+                    M.toast({ html: "Sensor deleted!" });
+                    setTimeout(() => {
+                        window.location.href = `/sensors/?building_id=${sensor.building_id}`;
+                    }, 1500);
+                } else {
+                    M.toast({ html: "Error deleting sensor." });
+                }
+            });
+        });
+});
+</script>
+
+{% endblock %}

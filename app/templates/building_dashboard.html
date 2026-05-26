@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Building Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h3>Building Dashboard: {{ building.name }}</h3>
+
+    <!-- 3D Model Viewer -->
+    <div id="modelWrapper" style="height: 600px; overflow: hidden; position: relative;">
+        <iframe id="modelIframe" width="100%" height="100%" style="border: none;"></iframe>
+    </div>
+
+    <!-- Building Attributes Table -->
+    <table class="striped">
+        <tbody>
+            <tr><th>ID</th><td>{{ building.id }}</td></tr>
+            <tr><th>Name</th><td>{{ building.name }}</td></tr>
+            <tr><th>Address</th><td>{{ building.address }}</td></tr>
+            <tr><th>Floors</th><td>{{ building.floors }}</td></tr>
+            <tr><th>Has Elevator</th><td>{{ "Yes" if building.has_elevator else "No" }}</td></tr>
+            <tr><th>Has Parking</th><td>{{ "Yes" if building.has_parking else "No" }}</td></tr>
+            <tr>
+                <th>IFC File</th>
+                <td>
+                    {% if has_ifc %}
+                        <!-- IFC file exists: show download and delete options -->
+                        <a href="/buildings/{{ building.id }}/model.ifc" class="btn green">
+                            <i class="material-icons left">download</i>Download IFC
+                        </a>
+                        <button class="btn red" id="delete-ifc-btn">
+                            <i class="material-icons left">delete</i>Delete IFC
+                        </button>
+                    {% else %}
+                        <!-- No IFC file: show upload option -->
+                        <input type="file" id="upload-ifc-input" style="display: none;" />
+                        <button class="btn blue" onclick="document.getElementById('upload-ifc-input').click();">
+                            <i class="material-icons left">upload</i>Upload IFC
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Image Viewer Modal -->
+    <div id="buildingModal" class="modal blue lighten-5">
+        <div class="modal-content">
+            <h4 class="blue-text text-darken-2">Image Viewer</h4>
+            <p id="buildingDetails" class="black-text">Loading...</p>
+            <img id="buildingImage" src="" style="max-width: 100%;">
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close btn-flat">Close</a>
+        </div>
+    </div>
+
+    <!-- Actions Section -->
+    <div class="section">
+        <a class="btn amber darken-2 modal-trigger" href="#edit-building-modal">
+            <i class="material-icons left">edit</i>Edit
+        </a>
+        <button class="btn red" id="delete-building-btn">
+            <i class="material-icons left">delete</i>Delete
+        </button>
+        <a class="btn teal" href="/buildings/{{ building.id }}/report" target="_blank">
+            <i class="material-icons left">picture_as_pdf</i>Generate PDF
+        </a>
+    </div>
+</div>
+
+<!-- Edit Building Modal -->
+<div id="edit-building-modal" class="modal">
+    <div class="modal-content">
+        <h4>Edit Building</h4>
+        <form id="editBuildingForm">
+            <div class="input-field">
+                <input id="edit_name" name="name" type="text" required>
+                <label for="edit_name" class="active">Name</label>
+            </div>
+            <div class="input-field">
+                <input id="edit_address" name="address" type="text" required>
+                <label for="edit_address" class="active">Address</label>
+            </div>
+            <div class="input-field">
+                <input id="edit_floors" name="floors" type="number">
+                <label for="edit_floors" class="active">Floors</label>
+            </div>
+            <div class="input-field">
+                <input id="edit_inhabitants" name="inhabitants" type="number">
+                <label for="edit_inhabitants" class="active">No. of inhabitants</label>
+            </div>
+
+            <!-- Elevator switch -->
+            <div class="input-field" style="display: flex; align-items: center; gap: 20px;">
+                <span>Has elevator?</span>
+                <div class="switch">
+                    <label>
+                        No
+                        <input id="edit_has_elevator" type="checkbox">
+                        <span class="lever"></span>
+                        Yes
+                    </label>
+                </div>
+            </div>
+
+            <!-- Parking switch -->
+            <div class="input-field" style="display: flex; align-items: center; gap: 20px;">
+                <span>Has parking?</span>
+                <div class="switch">
+                    <label>
+                        No
+                        <input id="edit_has_parking" type="checkbox">
+                        <span class="lever"></span>
+                        Yes
+                    </label>
+                </div>
+            </div>
+
+            <!-- Form actions -->
+            <div class="modal-footer">
+                <a href="#!" class="modal-close btn red lighten-1" id="cancel-edit-btn">Cancel</a>
+                <button type="button" class="btn orange" id="admin-access-btn">Access as Admin</button>
+                <button type="submit" class="btn waves-effect waves-light">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script id="building-data" type="application/json">
+    {{ building | tojson }}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    M.Modal.init(document.querySelectorAll('.modal'));
+
+    let building = JSON.parse(document.getElementById("building-data").textContent);
+
+    // Function to lock/unlock form fields
+    function setFormLockedState(isLocked) {
+        const inputs = document.querySelectorAll('#editBuildingForm input, #editBuildingForm select, #editBuildingForm textarea, #editBuildingForm button[type="submit"]');
+        inputs.forEach(el => el.disabled = (el.id !== 'cancel-edit-btn' && isLocked));
+    }
+
+    // Unlock API call
+    function unlockBuilding() {
+        return fetch(`/buildings/${building.id}/unlock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: 'demo_user', is_admin: false })
+        });
+    }
+
+    // Cancel button unlock
+    document.getElementById('cancel-edit-btn').addEventListener('click', unlockBuilding);
+
+    // Admin access password check
+    document.getElementById("admin-access-btn").addEventListener("click", function () {
+        const password = prompt("Enter admin password:");
+        if (password === "admin") {
+            setFormLockedState(false);
+            M.toast({ html: "Admin access granted." });
+            this.style.display = 'none';
+        } else {
+            M.toast({ html: "Incorrect password." });
+        }
+    });
+
+    // Upload IFC
+    const input = document.getElementById("upload-ifc-input");
+    if (input) {
+        input.addEventListener("change", function () {
+            const file = input.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch(`/buildings/${building.id}/upload_ifc`, {
+                method: "POST",
+                body: formData,
+            }).then(res => {
+                if (res.ok) {
+                    M.toast({ html: "IFC uploaded successfully!" });
+                    return fetch(`/buildings/${building.id}/convert_to_xkt`, { method: "POST" });
+                } else {
+                    throw new Error("IFC upload failed");
+                }
+            }).then(res => {
+                if (res.ok) {
+                    M.toast({ html: "Converted to XKT!" });
+                } else {
+                    M.toast({ html: "IFC uploaded but XKT conversion failed." });
+                }
+                setTimeout(() => location.reload(), 1500);
+            }).catch(() => {
+                M.toast({ html: "Error uploading IFC." });
+            });
+        });
+    }
+
+    // Delete IFC
+    const deleteBtn = document.getElementById("delete-ifc-btn");
+    if (deleteBtn) {
+        deleteBtn.addEventListener("click", function () {
+            if (!confirm("Delete IFC file for this building?")) return;
+            fetch(`/buildings/${building.id}/ifc_file`, { method: "DELETE" })
+                .then(res => {
+                    if (res.ok) {
+                        M.toast({ html: "IFC deleted." });
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        M.toast({ html: "Error deleting IFC." });
+                    }
+                });
+        });
+    }
+
+    // Lock building on edit button click
+    document.querySelector('a[href="#edit-building-modal"]').addEventListener('click', function () {
+        fetch(`/buildings/${building.id}/lock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user: 'demo_user',
+                is_admin: false
+            })
+        })
+        .then(res => {
+            if (res.status === 423) {
+                // Already locked by another user
+                return res.json().then(data => {
+                    M.toast({ html: `Already locked by ${data.lock.user}` });
+
+                    // Populate form fields in read-only mode
+                    document.getElementById('edit_name').value = building.name;
+                    document.getElementById('edit_address').value = building.address;
+                    document.getElementById('edit_floors').value = building.floors || 0;
+                    document.getElementById('edit_inhabitants').value = building.inhabitants || 0;
+                    document.getElementById('edit_has_elevator').checked = building.has_elevator;
+                    document.getElementById('edit_has_parking').checked = building.has_parking;
+                    M.updateTextFields();
+
+                    const modal = M.Modal.getInstance(document.getElementById('edit-building-modal'));
+                    modal.open();
+                    setFormLockedState(true); // disable inputs
+
+                    throw new Error('Locked by another user');
+                });
+            }
+
+            if (!res.ok) throw new Error('Failed to lock');
+            return res.json();
+        })
+        .then(data => {
+            // Lock successful, populate fields
+            document.getElementById('edit_name').value = building.name;
+            document.getElementById('edit_address').value = building.address;
+            document.getElementById('edit_floors').value = building.floors || 0;
+            document.getElementById('edit_inhabitants').value = building.inhabitants || 0;
+            document.getElementById('edit_has_elevator').checked = building.has_elevator;
+            document.getElementById('edit_has_parking').checked = building.has_parking;
+            M.updateTextFields();
+
+            const modal = M.Modal.getInstance(document.getElementById('edit-building-modal'));
+            modal.open();
+            setFormLockedState(false); // editable
+        })
+        .catch(err => {
+            console.warn(err);
+        });
+    });
+
+    // Submit updated building info
+    document.getElementById('editBuildingForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const updatedData = {
+            id: building.id,
+            name: document.getElementById('edit_name').value,
+            address: document.getElementById('edit_address').value,
+            floors: parseInt(document.getElementById('edit_floors').value) || 0,
+            inhabitants: parseInt(document.getElementById('edit_inhabitants').value) || 0,
+            has_elevator: document.getElementById('edit_has_elevator').checked,
+            has_parking: document.getElementById('edit_has_parking').checked,
+        };
+
+        fetch(`/buildings/${building.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData),
+        }).then(res => {
+            if (res.ok) {
+                M.toast({ html: 'Building updated!' });
+
+                // Unlock after successful update
+                fetch(`/buildings/${building.id}/unlock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: 'demo_user', is_admin: false })
+                });
+
+                // Update UI
+                const tds = document.querySelectorAll("table.striped td");
+                tds[0].textContent = updatedData.id;
+                tds[1].textContent = updatedData.name;
+                tds[2].textContent = updatedData.address;
+                tds[3].textContent = updatedData.floors;
+                tds[4].textContent = updatedData.has_elevator ? "Yes" : "No";
+                tds[5].textContent = updatedData.has_parking ? "Yes" : "No";
+
+                document.querySelector("h3").textContent = `Building Dashboard: ${updatedData.name}`;
+
+                const modalInstance = M.Modal.getInstance(document.getElementById('edit-building-modal'));
+                modalInstance.close();
+
+                building = updatedData;
+            } else {
+                M.toast({ html: 'Error updating building!' });
+            }
+        });
+    });
+
+    // Delete building
+    const deleteBuildingBtn = document.getElementById("delete-building-btn");
+    if (deleteBuildingBtn) {
+        deleteBuildingBtn.addEventListener("click", function () {
+            if (!confirm("Are you sure you want to delete this building?")) return;
+
+            fetch(`/buildings/${building.id}`, {
+                method: "DELETE"
+            }).then(res => {
+                if (res.ok) {
+                    M.toast({ html: "Building deleted!" });
+                    setTimeout(() => {
+                        window.location.href = "/buildings/management";
+                    }, 1500);
+                } else {
+                    M.toast({ html: "Error deleting building." });
+                }
+            });
+        });
+    }
+
+    // Unlock on tab close if modal is open
+    window.addEventListener("beforeunload", function () {
+        const editModal = M.Modal.getInstance(document.getElementById('edit-building-modal'));
+        if (editModal && editModal.isOpen) {
+            navigator.sendBeacon(
+                `/buildings/${building.id}/unlock`,
+                new Blob([JSON.stringify({
+                    user: 'demo_user',
+                    is_admin: false
+                })], { type: 'application/json' })
+            );
+        }
+    });
+
+    // Set 3D model iframe source using building ID
+    const iframe = document.getElementById("modelIframe");
+    iframe.src = `http://127.0.0.1:8080/app/index.html?building_id=${building.id}`;
+});
+</script>
+{% endblock %}

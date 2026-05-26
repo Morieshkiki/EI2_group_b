@@ -1,0 +1,169 @@
+{%extends "base.html"%}
+
+{%block title%}Buildings Dashboard{%endblock%}
+
+{%block content%}
+
+<div class="row">
+    <div class="col s12">
+        <h2 class="header">Buildings Overview</h2>
+        <a class="btn-floating btn-large waves-effect waves-light red modal-trigger tooltipped" href="#add-building-modal"
+            data-position="left" data-tooltip="Add new building">
+            <i class="material-icons"> add </i>
+        </a>
+    </div>
+</div>
+
+<table class="highlight responsive-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Project ID</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for building in buildings %}
+        <tr>
+            <td>{{ building.name }}</td>
+            <td>{{ building.address }}</td>
+            <td>{{ building.id }}</td>
+            <td>
+                <a href="/buildings/{{ building.id }}/dashboard" target="_blank" class="tooltipped" data-position="top" data-tooltip="View Building">
+                    <i class="material-icons">search</i>
+                </a>
+
+                <a href="#" class="tooltipped red-text" data-position="top" data-tooltip="Delete Building" onclick="deleteBuilding('{{ building.id }}'); return false;">
+                    <i class="material-icons">close</i>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal Structure for Adding New Building -->
+<div id="add-building-modal" class="modal">
+    <div class="modal-content">
+        <h4>Add New Building</h4>
+        <form action="/buildings/" method="post" id="myForm">
+            <div class="input-field">
+                <input id="id" name="id" type="text" class="validate" required>
+                <label for="id">ID</label>
+            </div>
+            <div class="input-field">
+                <input id="name" name="name" type="text" class="validate" required>
+                <label for="name">Name</label>
+            </div>
+            <div class="input-field">
+                <input id="address" name="address" type="text" class="validate" required>
+                <label for="address">Address</label>
+            </div>
+            <div class="input-field">
+                <input id="floors" name="floors" type="number" class="validate">
+                <label for="floors">Floors</label>
+            </div>
+
+            <div class="input-field">
+                <input id="inhabitants" name="inhabitants" type="number" class="validate">
+                <label for="inhabitants">No. of inhabitants</label>
+            </div>
+
+            <div class="input-field" style="display: flex; align-items: center; gap: 20px;">
+                <span>Has elevator?</span>
+                <div class="switch">
+                    <label>
+                        No
+                        <input id="has_elevator" name="has_elevator" type="checkbox" {% if has_elevator %}checked{% endif %}>
+                        <span class="lever"></span>
+                        Yes
+                    </label>
+                </div>
+            </div>
+
+            <div class="input-field" style="display: flex; align-items: center; gap: 20px;">
+                <span>Has parking?</span>
+                <div class="switch">
+                    <label>
+                        No
+                        <input id="has_parking" name="has_parking" type="checkbox" {% if has_parking %}checked{% endif %}>
+                        <span class="lever"></span>
+                        Yes
+                    </label>
+                </div>
+            </div>
+         
+            <button type="submit" class="btn waves-effect waves-light">Submit</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var elemsModal = document.querySelectorAll('.modal');
+        var instancesModal = M.Modal.init(elemsModal);
+
+        var elems = document.querySelectorAll('.tooltipped');
+        M.Tooltip.init(elems);
+    });
+    
+    // Add json send functionality to the Add-form 
+    document.getElementById('myForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        var object = {};
+
+        formData.forEach(function (value, key) {
+            if (key === "floors" || key === "inhabitants") {
+                object[key] = parseInt(value, 10) || 0;
+            } else {
+                object[key] = value;
+            }
+        });
+
+        object["has_elevator"] = document.getElementById("has_elevator").checked;
+        object["has_parking"] = document.getElementById("has_parking").checked;
+
+        var json = JSON.stringify(object);
+        fetch('/buildings/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: json
+        }).then(response => {
+            if (response.ok) {
+                M.toast({html: 'Building added successfully!'});
+                location.reload();
+            } else {
+                M.toast({html: 'Error adding building!'});
+            }
+        });
+    });
+
+    // Delete Building (Icon on Overview)
+
+    function deleteBuilding(id) {
+        if (!confirm('Are you sure you want to delete this building?')) {
+            return;
+    }
+
+    fetch(`/buildings/${id}`, {
+      method: 'DELETE',
+    }).then(response => {
+      if (response.ok) {
+        M.toast({html: 'Building deleted successfully!'});
+        setTimeout(() => {
+          location.reload();
+        }, 1500);
+      } else {
+        M.toast({html: 'Error deleting building!'});
+      }
+    });
+  }
+
+</script>
+{% endblock %}

@@ -6,3 +6,5 @@ node_modules/
 .env
 .claude/
 pip_install.log
+.idea/
+desktop.ini

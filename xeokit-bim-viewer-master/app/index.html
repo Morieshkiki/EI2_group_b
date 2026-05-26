@@ -1,0 +1,580 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>xeokit Example</title>
+    <link href="./css/pageStyle.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <style>
+    #myNavCubeCanvas {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+        bottom: 20px;
+        right: 20px;
+        z-index: 200000;
+    }
+
+    </style>
+
+    <style>
+
+        .annotation-marker {
+            color: #ffffff;
+            line-height: 1.8;
+            text-align: center;
+            font-family: "monospace";
+            font-weight: bold;
+            position: absolute;
+            overflow: visible;
+            width: 25px;
+            height: 25px;
+            border-radius: 15px;
+            border: 2px solid #ffffff;
+            background: black;
+            visibility: hidden;
+            box-shadow: 5px 5px 15px 1px #000000;
+            z-index: 0;
+        }
+
+        .annotation-label {
+            position: absolute;
+            max-width: 250px;
+            min-height: 50px;
+            padding: 8px;
+            padding-left: 12px;
+            padding-right: 12px;
+            background: #ffffff;
+            color: #000000;
+            -webkit-border-radius: 3px;
+            -moz-border-radius: 3px;
+            border-radius: 8px;
+            border: #ffffff solid 2px;
+            box-shadow: 5px 5px 15px 1px #000000;
+            z-index: 90000;
+        }
+
+        .annotation-marker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.6);
+                opacity: 0.7;
+            }
+            70% {
+                transform: translate(-50%, -50%) scale(1.6);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.6);
+                opacity: 0;
+            }
+        }
+
+        .annotation-label:before {
+            content: '';
+            position: absolute;
+            border-style: solid;
+            border-width: 9px 13px 9px 0;
+            border-color: transparent #ffffff;
+            display: block;
+            width: 0;
+            z-index: 0;
+            margin-top: -12px;
+            left: -15px;
+            top: 20px;
+        }
+
+        .annotation-title {
+            font: normal 20px arial, serif;
+            margin-bottom: 8px;
+        }
+
+        .annotation-desc {
+            font: normal 14px arial, serif;
+        }
+
+    #add-sensor, #delete-sensor, #sensors-dashboard {
+        position: absolute;
+        top: 60px;
+        left: 20px;
+        z-index: 1000;
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    #delete-sensor {
+        top: 100px; /* so it's below the "Add Sensor" button */
+        background-color: #dc3545;
+    }
+
+    #sensors-dashboard {
+        top: 140px; /* so it's below the "Delete Sensor" button */
+        background-color: #007bff;
+    }
+
+    #add-sensor:hover {
+        background-color: #218838;
+    }
+
+    #delete-sensor:hover {
+        background-color: #c82333;
+    }
+    
+    #sensors-dashboard:hover {
+        background-color: #0056b3;
+    }
+
+    #sensorForm {
+        z-index: 5000;
+        max-width: 400px;
+        width: 80%;
+    }
+
+    .annotation-marker {
+        z-index: 1000 !important;
+    }
+
+    .annotation-label {
+        z-index: 2000 !important;
+    }
+
+    </style>
+</head>
+
+<body>
+<input type="checkbox" id="info-button"/>
+<label for="info-button" class="info-button"><i class="far fa-3x fa-question-circle"></i></label>
+<canvas id="myCanvas"></canvas>
+<canvas id="myNavCubeCanvas"></canvas>
+<div class="slideout-sidebar">
+    <img class="info-icon" src="../images/logo.jpg"/><br>
+    This viewer is created using the Xeokit-SDK package.</div>
+<button id="add-sensor">Add Sensor</button>
+<button id="delete-sensor">Delete Sensor</button>
+<a id="sensors-dashboard-link" target="_blank">
+    <button id="sensors-dashboard">Sensors Dashboard</button>
+</a>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        const buildingId = params.get("building_id");
+        if (buildingId) {
+            document.getElementById("sensors-dashboard-link").href =
+                `http://127.0.0.1:8000/sensors/?building_id=${buildingId}`;
+        }
+    });
+</script>
+
+
+    <h1>AnnotationsPlugin</h1>
+    <h2>Click or tap the model to create annotations, control occlusion precision with markerZOffset</h2>
+    <h3>Components Used</h3>
+    <ul>
+        <li>
+            <a href="../../docs/class/src/viewer/Viewer.js~Viewer.html"
+               target="_other">Viewer</a>
+        </li>
+        <li>
+            <a href="../../docs/class/src/plugins/XKTLoaderPlugin/XKTLoaderPlugin.js~XKTLoaderPlugin.html"
+               target="_other">XKTLoaderPlugin</a>
+        </li>
+        <li>
+            <a href="./plugins/AnnotationsPlugin/AnnotationsPlugin.js~AnnotationsPlugin.html"
+               target="_other">AnnotationsPlugin</a>
+        </li>
+    </ul>
+    <h3>Resources</h3>
+</div>
+
+<!-- Modal formulary for creating a sensor -->
+<div id="sensorForm" style="display:none; position: absolute; top: 120px; left: 50px; background: white; border: 2px solid #444; padding: 20px; border-radius: 10px; z-index: 2000;">
+    <h4>Add New Sensor</h4>
+
+    <label for="sensorName">Sensor Name:</label><br>
+    <input type="text" id="sensorName" placeholder="Enter sensor name"><br>
+
+    <label for="sensorType">Sensor Type:</label><br>
+    <select id="sensorType">
+        <option value="temperature">Temperature</option>
+        <option value="humidity">Humidity</option>
+        <option value="combo">Combo (Temp + Hum)</option>
+    </select><br>
+
+    <label>Coordinates (fixed):</label>
+    <div id="sensorCoords" style="font-family: monospace; margin-bottom: 10px;"></div>
+
+    <label>Building ID:</label>
+    <div id="buildingIdDisplay" style="font-family: monospace; margin-bottom: 10px;"></div>
+
+    <button onclick="submitSensor()">Create Sensor</button>
+    <button onclick="cancelSensorForm()">Cancel</button>
+</div>
+
+</body>
+
+<script type="module">
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Import the modules we need for this example
+    //------------------------------------------------------------------------------------------------------------------
+
+    import {Viewer, XKTLoaderPlugin, AnnotationsPlugin, NavCubePlugin} from "../../dist/xeokit-sdk.min.es.js";
+
+    console.log(" index.html script loaded");
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Create a Viewer and arrange the camera
+    //------------------------------------------------------------------------------------------------------------------
+
+    // Get the building_id from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const buildingId = urlParams.get('building_id')
+    console.log("buildingId:", buildingId);
+
+    const viewer = new Viewer({
+        canvasId: "myCanvas",
+        markerZOffset: -0.0001, // Changing marker Z offset to be more precise
+    });
+
+    viewer.camera.eye = [-3.93, 2.85, 27.01];
+    viewer.camera.look = [4.40, 3.72, 8.89];
+    viewer.camera.up = [-0.01, 0.99, 0.039];
+
+    viewer.cameraControl.doublePickFlyTo = false;
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Load a model
+    //------------------------------------------------------------------------------------------------------------------
+
+    const xktLoader = new XKTLoaderPlugin(viewer);
+
+    //Nav cube
+    new NavCubePlugin(viewer, {
+        canvasId: "myNavCubeCanvas",
+        color: "lightblue",
+        visible: true,           // Initially visible (default)
+        cameraFly: true,       // Fly camera to each selected axis/diagonal
+        cameraFitFOV: 45,        // How much field-of-view the scene takes once camera has fitted it to view
+        cameraFlyDuration: 0.5 // How long (in seconds) camera takes to fly to each new axis/diagonal
+    });
+
+    const sceneModel = xktLoader.load({
+        id: "myModel",
+        src: `http://127.0.0.1:8000/static/xkt_models/${buildingId}.xkt`,
+        edges: true
+    });
+
+    //Prevent scrolling in the view
+    window.addEventListener('wheel', function(e) {
+    if (e.ctrlKey || e.deltaY !== 0) { 
+        e.preventDefault();  // prevent scrolling/zooming the parent page
+    }
+    }, { passive: false });
+
+    //------------------------------------------------------------------------------------------------------------------
+    // Create an AnnotationsPlugin, with which we'll create annotations
+    //------------------------------------------------------------------------------------------------------------------
+    const canvas = document.getElementById("myCanvas");
+
+    const annotations = new AnnotationsPlugin(viewer, {
+        includeUserDataInEvent: true, // <- esto es lo que permite que userData esté disponible
+        markerHTML: "<div class='annotation-marker' style='background-color: {{markerBGColor}};'>{{glyph}}</div>",
+        labelHTML: "<div class='annotation-label' style='background-color: {{labelBGColor}};'><div class='annotation-title'>{{title}}</div><div class='annotation-desc'>{{description}}</div></div>",
+        values: {
+            markerBGColor: "red",
+            glyph: "X",
+            title: "Untitled",
+            description: "No description"
+        },
+        surfaceOffset: 0.1
+    });
+
+
+    window.annotations = annotations;
+
+    let mode = "info"; // modes: "info", "add", "delete"
+    let annotationCount = 1;
+
+    // Keep track of locked (clicked-open) annotations to differentiate from hover
+    const lockedAnnotations = new Set();
+
+    // Hover events: show label on mouse enter, hide on leave only if not locked
+    annotations.on("markerMouseEnter", (annotation) => {
+        annotation.setLabelShown(true);
+    });
+
+    annotations.on("markerMouseLeave", (annotation) => {
+        if (!lockedAnnotations.has(annotation.id)) {
+            annotation.setLabelShown(false);
+        }
+    });
+
+    annotations.on("markerClicked", (annotation) => {
+        if (mode === "info") {
+            const isLocked = lockedAnnotations.has(annotation.id);
+
+            if (isLocked) {
+                annotation.setLabelShown(false);
+                lockedAnnotations.delete(annotation.id);
+            } else {
+                if (window.prevAnnotationClicked && window.prevAnnotationClicked !== annotation) {
+                    window.prevAnnotationClicked.setLabelShown(false);
+                    lockedAnnotations.delete(window.prevAnnotationClicked.id);
+                }
+
+                annotation.setLabelShown(true);
+                lockedAnnotations.add(annotation.id);
+                viewer.cameraFlight.flyTo(annotation);
+                window.prevAnnotationClicked = annotation;
+            }
+
+            return;
+        }
+
+        if (mode === "delete") {
+            const sensorId = annotation.userData?.id;
+            if (!sensorId) {
+                M.toast({ html: "Cannot delete sensor: missing ID." });
+                return;
+            }
+
+            annotations.destroyAnnotation(annotation.id);
+            lockedAnnotations.delete(annotation.id); // Clean up from the set
+
+            fetch(`http://127.0.0.1:8000/sensors/${sensorId}`, {
+                method: "DELETE"
+            }).then(res => {
+                if (res.ok) {
+                    M.toast({ html: "Sensor deleted." });
+                } else {
+                    M.toast({ html: "Failed to delete sensor from database." });
+                }
+            }).catch(err => {
+                console.error("Error deleting sensor:", err);
+                M.toast({ html: "Error deleting sensor." });
+            });
+        }
+    });
+
+    // Manage mode buttons
+    document.getElementById("add-sensor").addEventListener("click", () => {
+        console.log(" Add Sensor button clicked");
+        if (mode === "add") {
+            mode = "info";
+            document.getElementById("add-sensor").textContent = "Add Sensor";
+        } else {
+            mode = "add";
+            document.getElementById("add-sensor").textContent = "Stop Adding";
+            document.getElementById("delete-sensor").textContent = "Delete Sensor";
+        }
+    });
+
+    document.getElementById("delete-sensor").addEventListener("click", () => {
+        console.log(" Delete Sensor button clicked");
+        if (mode === "delete") {
+            mode = "info";
+            document.getElementById("delete-sensor").textContent = "Delete Sensor";
+        } else {
+            mode = "delete";
+            document.getElementById("delete-sensor").textContent = "Stop Deleting";
+            document.getElementById("add-sensor").textContent = "Add Sensor";
+        }
+    });
+
+
+    let lastPickedPosition = null;
+    window.lastPickedPosition = lastPickedPosition;
+
+    // Utiliza building_id desde query string o valor fijo por defecto
+    window.buildingId = buildingId;
+    console.log("Resolved building ID from query string:", buildingId);
+
+
+    // Add sensor on canvas click when in add mode
+    canvas.addEventListener("click", (event) => {
+        console.log("Canvas clicked, current mode:", mode);
+        if (mode !== "add") return;
+
+        const rect = canvas.getBoundingClientRect();
+        const canvasX = event.clientX - rect.left;
+        const canvasY = event.clientY - rect.top;
+
+        const pickResult = viewer.scene.pick({ canvasPos: [canvasX, canvasY], pickSurface: true });
+        if (pickResult) {
+            window.lastPickedPosition = Array.from(pickResult.worldPos);
+            document.getElementById("sensorCoords").textContent =
+                `X: ${window.lastPickedPosition[0].toFixed(2)}, Y: ${window.lastPickedPosition[1].toFixed(2)}, Z: ${window.lastPickedPosition[2].toFixed(2)}`;
+            document.getElementById("buildingIdDisplay").textContent = buildingId;
+            document.getElementById("sensorForm").style.display = "block";
+            M.FormSelect.init(document.querySelectorAll('select'));
+        } else {
+            console.warn("Nothing was picked on the model.");
+        }
+    });
+
+    // Fetch existing sensors and render annotations
+    fetch(`http://127.0.0.1:8000/sensors/json?building_id=${window.buildingId}`)
+        .then(res => res.json())
+        .then(sensors => {
+            sensors.forEach(sensor => {
+                const [x, y, z] = sensor.sensor_coord;
+
+                // Asignar color según tipo
+                let color = "gray";
+                if (sensor.type === "temperature") color = "red";
+                else if (sensor.type === "humidity") color = "blue";
+                else if (sensor.type === "combo") color = "green";
+
+                fetch(`http://127.0.0.1:8000/sensors/latest_reading/${sensor.id}`)
+                    .then(res => res.json())
+                    .then(reading => {
+                        const temp = reading.temperature !== undefined ? `Temp: ${reading.temperature}°C` : "Temp: N/A";
+                        const hum = reading.humidity !== undefined ? `Hum: ${reading.humidity}%` : "Hum: N/A";
+                        const timestamp = reading.timestamp 
+                            ? `At: ${reading.timestamp.split("T")[1].split(".")[0]}` 
+                            : "At: N/A";
+
+                        const description = `Type: ${sensor.type}<br>${temp} ${hum}<br>${timestamp}`;
+
+                        const ann = annotations.createAnnotation({
+                            worldPos: [x, y, z],
+                            values: {
+                                markerBGColor: color,
+                                glyph: "",
+                                title: sensor.name,
+                                description: description
+                            }
+                        });
+
+                        ann.userData = { id: sensor.id };
+                    });
+            });
+                    M.toast({ html: "Existing sensors loaded." });
+                })
+
+        .catch(err => {
+            console.error("Failed to load existing sensors:", err);
+        });
+
+
+    window.viewer = viewer;
+
+</script>
+
+<script>
+// Submit form
+    function submitSensor() {
+        const name = document.getElementById("sensorName").value.trim();
+        const type = document.getElementById("sensorType").value;
+
+        if (!name || !type || !window.lastPickedPosition) {
+            alert("Please complete all fields before submitting.");
+            return;
+        }
+
+        const sensorId = String(Date.now());
+
+        // 1. Check for sensor name duplication
+        fetch(`http://127.0.0.1:8000/sensors/json?building_id=${window.buildingId}`)
+            .then(res => res.json())
+            .then(sensors => {
+                const alreadyExists = sensors.some(s => s.name === name);
+                if (alreadyExists) {
+                    M.toast({ html: `Sensor with name "${name}" already exists.` });
+                    return;
+                }
+
+                // 2. Create the sensor if no duplication	
+                return fetch("http://127.0.0.1:8000/sensors/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id: sensorId,
+                        name,
+                        type,
+                        building_id: window.buildingId,
+                        sensor_coord: window.lastPickedPosition
+                    })
+                });
+            })
+            .then(async response => {
+                if (!response || !response.ok) {
+                    M.toast({ html: "Error creating sensor." });
+                    return;
+                }
+
+                M.toast({ html: "Sensor created successfully!" });
+                document.getElementById("sensorForm").style.display = "none";
+                document.getElementById("sensorName").value = "";
+
+                // Assign color based on sensor type
+                let color = "gray";
+                if (type === "temperature") color = "red";
+                else if (type === "humidity") color = "blue";
+                else if (type === "combo") color = "green";
+
+                // Create annotation
+                const annotation = window.annotations.createAnnotation({
+                    worldPos: window.lastPickedPosition,
+                    values: {
+                        markerBGColor: color,
+                        glyph: "",
+                        title: name,
+                        description: `Type: ${type}`
+                    }
+                });
+
+                annotation.userData = { id: sensorId };
+
+                // Clear last picked position
+                window.lastPickedPosition = null;
+
+                // Reset form fields
+                document.getElementById("sensorCoords").textContent = "";
+                document.getElementById("buildingIdDisplay").textContent = "";
+            })
+            .catch(err => {
+                console.error("Unexpected error:", err);
+                M.toast({ html: "Unexpected error creating sensor." });
+            });
+    }
+
+
+    function cancelSensorForm() {
+        document.getElementById("sensorForm").style.display = "none";
+    }
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var elems = document.querySelectorAll('select');
+    M.FormSelect.init(elems);
+  });
+</script>
+
+</html>

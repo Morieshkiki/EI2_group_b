@@ -1,0 +1,58 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Smart City BIM Viewer{% endblock %}</title>
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <!-- Materialize JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <!-- Material icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <nav class="nav-wrapper blue-grey darken-3">
+            <div class="container">
+                <a href="/" class="brand-logo">Building Management WebApp</a>
+                <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+            </div>
+        </nav>
+        <!-- Dropdown Structure -->
+        <ul id="dropdown1" class="dropdown-content">
+            <li><a href="#!">Profile</a></li>
+            <li><a href="#!">Logout</a></li>
+        </ul>
+        <!-- Sidenav for mobile -->
+        <ul class="sidenav" id="mobile-demo">
+            <li><a href="/">Home</a></li>
+            <li><a href="#!">Profile</a></li>
+            <li><a href="#!">Logout</a></li>
+        </ul>
+    </header>
+    
+    <main>
+        <div class="container">
+            {% block content %}
+            <!-- Implement main content of the web page here -->
+            {% endblock %}
+        </div>
+    </main>
+
+    <footer class="page-footer blue-grey darken-3">
+        <div class="container">
+            © 2025 Group 6
+        </div>
+    </footer>
+    
+    {% block scripts %}
+        <!-- Custom JavaScript can be implemented in the following block -->
+
+    {% endblock %}
+
+</body>
+
+</html>
