@@ -3,69 +3,78 @@
 {% block title %}Building Dashboard{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h3>Building Dashboard: {{ building.name }}</h3>
+<div>
+    <div class="studio-head">
+        <div>
+            <p class="eyebrow">Asset / Dashboard</p>
+            <h3>Building Dashboard: {{ building.name }}</h3>
+        </div>
+        <div class="studio-toolbar">
+            <a class="btn amber darken-2 modal-trigger" href="#edit-building-modal">
+                <i class="material-icons left">edit</i>Modify
+            </a>
+            <button class="btn red" id="delete-building-btn">
+                <i class="material-icons left">delete</i>Remove building
+            </button>
+            <a class="btn teal" href="/buildings/{{ building.id }}/report" target="_blank">
+                <i class="material-icons left">picture_as_pdf</i>Export PDF
+            </a>
+        </div>
+    </div>
 
     <!-- 3D Model Viewer -->
+    <!-- this part uses Demo 3 (iframe_demo.html) for embedding the 3D viewer in an
+         iframe; the viewer URL is set from JavaScript further down. -->
+    <span class="panel-label">3D model · IFC viewer</span>
     <div id="modelWrapper" style="height: 600px; overflow: hidden; position: relative;">
         <iframe id="modelIframe" width="100%" height="100%" style="border: none;"></iframe>
     </div>
 
     <!-- Building Attributes Table -->
-    <table class="striped">
-        <tbody>
-            <tr><th>ID</th><td>{{ building.id }}</td></tr>
-            <tr><th>Name</th><td>{{ building.name }}</td></tr>
-            <tr><th>Address</th><td>{{ building.address }}</td></tr>
-            <tr><th>Floors</th><td>{{ building.floors }}</td></tr>
-            <tr><th>Has Elevator</th><td>{{ "Yes" if building.has_elevator else "No" }}</td></tr>
-            <tr><th>Has Parking</th><td>{{ "Yes" if building.has_parking else "No" }}</td></tr>
-            <tr>
-                <th>IFC File</th>
-                <td>
-                    {% if has_ifc %}
-                        <!-- IFC file exists: show download and delete options -->
-                        <a href="/buildings/{{ building.id }}/model.ifc" class="btn green">
-                            <i class="material-icons left">download</i>Download IFC
-                        </a>
-                        <button class="btn red" id="delete-ifc-btn">
-                            <i class="material-icons left">delete</i>Delete IFC
-                        </button>
-                    {% else %}
-                        <!-- No IFC file: show upload option -->
-                        <input type="file" id="upload-ifc-input" style="display: none;" />
-                        <button class="btn blue" onclick="document.getElementById('upload-ifc-input').click();">
-                            <i class="material-icons left">upload</i>Upload IFC
-                        </button>
-                    {% endif %}
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="panel" style="margin-top: 28px;">
+        <span class="panel-label">Specifications</span>
+        <table class="striped">
+            <tbody>
+                <tr><th>ID</th><td>{{ building.id }}</td></tr>
+                <tr><th>Name</th><td>{{ building.name }}</td></tr>
+                <tr><th>Address</th><td>{{ building.address }}</td></tr>
+                <tr><th>Floors</th><td>{{ building.floors }}</td></tr>
+                <tr><th>Has Elevator</th><td>{{ "Yes" if building.has_elevator else "No" }}</td></tr>
+                <tr><th>Has Parking</th><td>{{ "Yes" if building.has_parking else "No" }}</td></tr>
+                <tr>
+                    <th>IFC File</th>
+                    <td>
+                        {% if has_ifc %}
+                            <!-- IFC file exists: show download and delete options -->
+                            <a href="/buildings/{{ building.id }}/model.ifc" class="btn green">
+                                <i class="material-icons left">download</i>Download
+                            </a>
+                            <button class="btn red" id="delete-ifc-btn">
+                                <i class="material-icons left">delete</i>Remove IFC
+                            </button>
+                        {% else %}
+                            <!-- No IFC file: show upload option -->
+                            <input type="file" id="upload-ifc-input" style="display: none;" />
+                            <button class="btn blue" onclick="document.getElementById('upload-ifc-input').click();">
+                                <i class="material-icons left">upload</i>Upload IFC model
+                            </button>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <!-- Image Viewer Modal -->
     <div id="buildingModal" class="modal blue lighten-5">
         <div class="modal-content">
-            <h4 class="blue-text text-darken-2">Image Viewer</h4>
+            <h4>Image Viewer</h4>
             <p id="buildingDetails" class="black-text">Loading...</p>
             <img id="buildingImage" src="" style="max-width: 100%;">
         </div>
         <div class="modal-footer">
             <a href="#!" class="modal-close btn-flat">Close</a>
         </div>
-    </div>
-
-    <!-- Actions Section -->
-    <div class="section">
-        <a class="btn amber darken-2 modal-trigger" href="#edit-building-modal">
-            <i class="material-icons left">edit</i>Edit
-        </a>
-        <button class="btn red" id="delete-building-btn">
-            <i class="material-icons left">delete</i>Delete
-        </button>
-        <a class="btn teal" href="/buildings/{{ building.id }}/report" target="_blank">
-            <i class="material-icons left">picture_as_pdf</i>Generate PDF
-        </a>
     </div>
 </div>
 
@@ -119,9 +128,9 @@
 
             <!-- Form actions -->
             <div class="modal-footer">
-                <a href="#!" class="modal-close btn red lighten-1" id="cancel-edit-btn">Cancel</a>
-                <button type="button" class="btn orange" id="admin-access-btn">Access as Admin</button>
-                <button type="submit" class="btn waves-effect waves-light">Save Changes</button>
+                <a href="#!" class="modal-close btn red lighten-1" id="cancel-edit-btn">Discard</a>
+                <button type="button" class="btn orange" id="admin-access-btn">Unlock (admin)</button>
+                <button type="submit" class="btn waves-effect waves-light">Save</button>
             </div>
         </form>
     </div>
@@ -360,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Set 3D model iframe source using building ID
     const iframe = document.getElementById("modelIframe");
-    iframe.src = `http://127.0.0.1:8080/app/index.html?building_id=${building.id}`;
+    iframe.src = `http://127.0.0.1:8080/app/index.html?building_id=${building.id}&_=${Date.now()}`;
 });
 </script>
 {% endblock %}

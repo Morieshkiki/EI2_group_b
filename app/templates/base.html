@@ -1,23 +1,320 @@
 <!-- templates/base.html -->
+<!-- this part uses Demo 1 (base.html) for the shared page layout that all pages
+     extend (Jinja template inheritance). -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Smart City BIM Viewer{% endblock %}</title>
-    <!-- Materialize CSS -->
+    <!-- Materialize CSS (framework / behaviour) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <!-- Materialize JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <!-- Material icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Distinctive type: Bricolage Grotesque (display) / Spline Sans (body) / Space Mono (data) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Space+Mono:wght@400;700&family=Spline+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           "DRAFTING STUDIO" DESIGN SYSTEM
+           A blueprint-on-white-paper theme layered over Materialize.
+           Colour utilities in Materialize use !important, so the
+           re-mapping below intentionally uses !important to win.
+           ============================================================ */
+        :root {
+            --ink:        #15171c;
+            --ink-soft:   #3a3f4a;
+            --paper:      #fcfbf8;   /* near-white "paper" */
+            --surface:    #ffffff;
+            --line:       #ddd8cc;   /* warm hairline */
+            --line-2:     #c8c2b3;
+            --muted:      #6f6b60;
+            --accent:     #c2570c;   /* construction amber – primary */
+            --accent-dk:  #97420a;
+            --brick:      #a63a2b;   /* destructive */
+            --pine:       #0f6e5c;   /* reports / secondary */
+            --steel:      #3f5765;   /* upload / info */
+            --green:      #2f7a4f;   /* download */
+            --grid:       rgba(21,23,28,.045);
+            --shadow:     6px 6px 0 rgba(21,23,28,.10);
+        }
+
+        html, body { background-color: var(--paper); }
+
+        body {
+            color: var(--ink);
+            font-family: "Spline Sans", system-ui, sans-serif;
+            /* faint blueprint grid */
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 26px 26px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        main { flex: 1 0 auto; padding-top: 30px; padding-bottom: 60px; }
+        main .container { width: 92%; max-width: 1180px; }
+
+        ::selection { background: var(--accent); color: #fff; }
+
+        /* ---------- NAV / HEADER ---------- */
+        nav, nav.nav-wrapper {
+            background: var(--ink) !important;
+            box-shadow: none;
+            border-bottom: 3px solid var(--accent);
+            height: 68px; line-height: 68px;
+        }
+        nav .brand-logo {
+            font-family: "Bricolage Grotesque", sans-serif;
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: -.01em;
+            display: inline-flex; align-items: center; gap: .55rem;
+        }
+        nav .brand-logo::before {
+            content: "";
+            width: 16px; height: 16px;
+            background: var(--accent);
+            box-shadow: 4px 4px 0 rgba(255,255,255,.18);
+            display: inline-block;
+        }
+        nav .nav-mono {
+            font-family: "Space Mono", monospace;
+            font-size: .62rem; letter-spacing: .22em;
+            text-transform: uppercase; color: rgba(255,255,255,.55);
+        }
+
+        /* ---------- TYPOGRAPHY ---------- */
+        main h1, main h2, main h3, main h4, main h5,
+        .modal-content h4 {
+            font-family: "Bricolage Grotesque", sans-serif;
+            font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -.015em;
+            line-height: 1.05;
+        }
+        main h2.header, main h3.header { margin-top: 0; }
+
+        /* page header band used across pages */
+        .studio-head {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            flex-wrap: wrap; gap: 18px;
+            border-bottom: 2px solid var(--ink);
+            padding-bottom: 16px; margin-bottom: 30px;
+        }
+        .studio-head .eyebrow {
+            font-family: "Space Mono", monospace;
+            font-size: .68rem; letter-spacing: .28em; text-transform: uppercase;
+            color: var(--accent); margin: 0 0 8px;
+        }
+        .studio-head h1, .studio-head h2, .studio-head h3, .studio-head h4 {
+            margin: 0; font-size: clamp(1.8rem, 3.4vw, 2.9rem);
+        }
+
+        /* ---------- PANELS / "drafting cards" ---------- */
+        .panel {
+            position: relative;
+            background: var(--surface);
+            border: 1.5px solid var(--ink);
+            padding: 26px 28px;
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+        }
+        /* corner registration ticks */
+        .panel::before, .panel::after {
+            content: ""; position: absolute; width: 12px; height: 12px;
+            border-color: var(--accent); border-style: solid; border-width: 0;
+        }
+        .panel::before { top: 7px; left: 7px; border-top-width: 2px; border-left-width: 2px; }
+        .panel::after  { bottom: 7px; right: 7px; border-bottom-width: 2px; border-right-width: 2px; }
+        .panel-label {
+            font-family: "Space Mono", monospace;
+            font-size: .66rem; letter-spacing: .2em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 14px; display: block;
+        }
+
+        /* ---------- TABLES ---------- */
+        table { background: var(--surface); border-collapse: collapse; }
+        table thead th {
+            font-family: "Space Mono", monospace;
+            font-size: .68rem; letter-spacing: .14em; text-transform: uppercase;
+            color: #fff; background: var(--ink);
+            border: none; padding: 13px 16px;
+        }
+        table tbody td, table tbody th {
+            border-bottom: 1px solid var(--line) !important;
+            padding: 13px 16px; color: var(--ink-soft);
+        }
+        /* key column in key/value spec tables */
+        table.striped tbody th {
+            font-family: "Space Mono", monospace;
+            font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+            color: var(--muted); width: 210px; background: #faf8f3;
+        }
+        table.striped > tbody > tr:nth-child(odd) { background-color: #fcfbf8; }
+        table.highlight > tbody > tr:hover { background-color: #fbeee3 !important; }
+        /* IDs / coordinates read as data */
+        table tbody td:first-child { font-family: "Space Mono", monospace; font-size: .86rem; }
+        table.striped tbody td { font-family: "Spline Sans", sans-serif; }
+
+        /* ---------- BUTTONS ---------- */
+        .btn, .btn-large, .btn-small, .btn-flat {
+            font-family: "Space Mono", monospace;
+            font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+            font-size: .74rem;
+            border-radius: 2px;
+            box-shadow: none;
+            background-color: var(--ink);
+            transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease;
+            text-transform: uppercase;
+        }
+        .btn:hover, .btn-large:hover {
+            background-color: var(--ink-soft);
+            box-shadow: 4px 4px 0 rgba(21,23,28,.18);
+            transform: translate(-2px,-2px);
+        }
+        .btn:active, .btn-large:active { transform: translate(0,0); box-shadow: none; }
+        .btn i.material-icons { font-size: 1.1rem; }
+
+        /* colour re-mapping (Materialize colour utils use !important) */
+        .btn.amber, .btn.amber.darken-2, .btn.orange,
+        .btn-floating.amber, .btn-floating.orange { background-color: var(--accent) !important; color:#fff !important; }
+        .btn.amber:hover, .btn.amber.darken-2:hover, .btn.orange:hover { background-color: var(--accent-dk) !important; }
+
+        .btn.red, .btn.red.lighten-1 { background-color: var(--brick) !important; color:#fff !important; }
+        .btn.red:hover { background-color: #862c20 !important; }
+
+        .btn.teal { background-color: var(--pine) !important; color:#fff !important; }
+        .btn.teal:hover { background-color: #0a5446 !important; }
+
+        .btn.green { background-color: var(--green) !important; color:#fff !important; }
+        .btn.blue  { background-color: var(--steel) !important; color:#fff !important; }
+        .btn.blue:hover { background-color: #314650 !important; }
+
+        /* floating action button -> accent square-ish */
+        .btn-floating, .btn-floating.btn-large, .btn-floating.red {
+            background-color: var(--accent) !important;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+        }
+        .btn-floating:hover { background-color: var(--accent-dk) !important; transform: translate(-2px,-2px); }
+
+        /* flat / ghost */
+        .btn-flat {
+            background: transparent; color: var(--ink);
+            border: 1.5px solid var(--ink);
+        }
+        .btn-flat:hover { background: var(--ink); color: #fff; }
+
+        .red-text { color: var(--brick) !important; }
+
+        /* primary action helper (rectangular labelled button) */
+        .btn.is-accent { background-color: var(--accent) !important; }
+        .btn.is-ghost {
+            background: transparent !important; color: var(--ink) !important;
+            border: 1.5px solid var(--line-2);
+        }
+        .btn.is-ghost:hover { border-color: var(--ink); background: #f3f0e9 !important; }
+
+        /* ---------- MODALS ("plan sheets") ---------- */
+        .modal {
+            border-radius: 0;
+            border: 1.5px solid var(--ink);
+            box-shadow: 10px 10px 0 rgba(21,23,28,.18);
+        }
+        .modal .modal-content { padding: 30px 32px; }
+        .modal .modal-content h4 {
+            font-size: 1.6rem; margin: 0 0 6px;
+            padding-bottom: 14px; border-bottom: 1px dashed var(--line-2);
+        }
+        .modal .modal-content h4::after {
+            content: ""; display:block; width: 46px; height: 3px;
+            background: var(--accent); margin-top: 14px;
+        }
+        .modal-footer {
+            background: #faf8f3 !important; border-top: 1px solid var(--line);
+            display: flex; gap: 10px; justify-content: flex-end; align-items: center;
+            padding: 0 24px !important; height: auto !important; min-height: 64px;
+        }
+        .modal.blue.lighten-5 { background: var(--surface) !important; }
+        .modal-overlay { background: var(--ink); }
+
+        /* ---------- FORM FIELDS ---------- */
+        .input-field input[type=text], .input-field input[type=number],
+        .input-field input:not([type]), .input-field textarea {
+            border-bottom: 1.5px solid var(--line-2);
+            color: var(--ink);
+        }
+        .input-field input:focus:not([readonly]) {
+            border-bottom: 2px solid var(--accent) !important;
+            box-shadow: 0 1px 0 0 var(--accent) !important;
+        }
+        .input-field input:focus + label,
+        .input-field label.active { color: var(--accent) !important; }
+        .input-field > label {
+            font-family: "Space Mono", monospace;
+            font-size: .8rem; letter-spacing: .04em; color: var(--muted);
+        }
+        /* switches */
+        .switch label input[type=checkbox]:checked + .lever { background-color: rgba(194,87,12,.45); }
+        .switch label input[type=checkbox]:checked + .lever::after { background-color: var(--accent); }
+        .switch label { color: var(--ink-soft); font-family: "Space Mono", monospace; font-size: .8rem; }
+
+        /* select dropdown accents */
+        .dropdown-content li > a, .dropdown-content li > span { color: var(--accent); }
+
+        /* ---------- TOASTS ---------- */
+        .toast {
+            background-color: var(--ink); border-radius: 2px;
+            font-family: "Space Mono", monospace; font-size: .8rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        /* ---------- 3D VIEWER FRAME ---------- */
+        #modelWrapper {
+            border: 1.5px solid var(--ink) !important;
+            box-shadow: var(--shadow);
+            background:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+                #f4f2ec;
+            background-size: 26px 26px;
+        }
+
+        /* toolbar row of actions */
+        .studio-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .studio-toolbar .btn { margin: 0; }
+
+        /* ---------- FOOTER ---------- */
+        .page-footer {
+            background: var(--ink) !important;
+            border-top: 3px solid var(--accent);
+            padding-top: 26px; margin-top: auto;
+        }
+        .page-footer .container {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 8px;
+            font-family: "Space Mono", monospace;
+            font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+            color: rgba(255,255,255,.7);
+        }
+        .page-footer .foot-tag { color: rgba(255,255,255,.4); }
+    </style>
 </head>
 
 <body>
     <header>
-        <nav class="nav-wrapper blue-grey darken-3">
+        <nav class="nav-wrapper">
             <div class="container">
-                <a href="/" class="brand-logo">Building Management WebApp</a>
+                <a href="/" class="brand-logo">BIM&nbsp;Studio<span class="nav-mono hide-on-small-only">/ building&nbsp;ops</span></a>
                 <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
             </div>
         </nav>
@@ -33,7 +330,7 @@
             <li><a href="#!">Logout</a></li>
         </ul>
     </header>
-    
+
     <main>
         <div class="container">
             {% block content %}
@@ -42,15 +339,15 @@
         </div>
     </main>
 
-    <footer class="page-footer blue-grey darken-3">
+    <footer class="page-footer">
         <div class="container">
-            © 2025 Group 6
+            <span>© 2026 GroupB</span>
+            <span class="foot-tag">Smart City · BIM Building Operations</span>
         </div>
     </footer>
-    
+
     {% block scripts %}
         <!-- Custom JavaScript can be implemented in the following block -->
-
     {% endblock %}
 
 </body>

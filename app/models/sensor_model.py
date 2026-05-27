@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 
 
+# the data models here follow Demo 1 (building_model.py) — these are the sensor versions.
 class SensorModel(BaseModel):
     id: str
     name: str

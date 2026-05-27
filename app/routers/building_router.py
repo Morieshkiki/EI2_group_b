@@ -24,6 +24,9 @@ import app.config as config
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 
+# the building routes and database setup here are based on Demo 1 (building_router.py):
+# listing, adding, editing and fetching buildings. The locking, IFC/XKT and report
+# features were added on top.
 router = APIRouter(prefix="/buildings", tags=["buildings"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 

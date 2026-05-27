@@ -2,6 +2,7 @@ from pymongo import MongoClient, collection
 import app.config as config
 
 
+# this part uses Demo 1 (mongo_db_connector.py) for connecting to the MongoDB database.
 def init_db(collection_name: str) -> collection.Collection:
     """Fetches the collection from the MongoDB database specified in config.py."""
     try:

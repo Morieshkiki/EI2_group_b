@@ -1,3 +1,10 @@
+0527_1
+- Added arduino/ ESP8266 sketches (WiFi credentials replaced with placeholders)
+- Added tests/ pytest suite (buildings, sensors)
+- Added app/static/xkt_models/Morteza1.xkt
+- Updated app config/routers/models/templates, Dockerfile and docker-compose.yml
+- Updated README with test and Arduino setup instructions
+
 0610_4
 
 0610_3

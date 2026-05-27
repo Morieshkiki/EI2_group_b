@@ -4,49 +4,55 @@
 
 {%block content%}
 
-<div class="row">
-    <div class="col s12">
-        <h2 class="header">Buildings Overview</h2>
-        <a class="btn-floating btn-large waves-effect waves-light red modal-trigger tooltipped" href="#add-building-modal"
-            data-position="left" data-tooltip="Add new building">
-            <i class="material-icons"> add </i>
-        </a>
+<div class="studio-head">
+    <div>
+        <p class="eyebrow">Portfolio / Index</p>
+        <h2>Building Register</h2>
     </div>
+    <a class="btn is-accent waves-effect waves-light modal-trigger tooltipped" href="#add-building-modal"
+        data-position="left" data-tooltip="Register a new building">
+        <i class="material-icons left">add</i> New Building
+    </a>
 </div>
 
-<table class="highlight responsive-table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Project ID</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for building in buildings %}
-        <tr>
-            <td>{{ building.name }}</td>
-            <td>{{ building.address }}</td>
-            <td>{{ building.id }}</td>
-            <td>
-                <a href="/buildings/{{ building.id }}/dashboard" target="_blank" class="tooltipped" data-position="top" data-tooltip="View Building">
-                    <i class="material-icons">search</i>
-                </a>
+<!-- this part uses Demo 3 (index.html) for the HTML table and form structure, and
+     follows Demo 1 (buildings.html) for listing the buildings. -->
+<div class="panel">
+    <span class="panel-label">Registered structures</span>
+    <table class="highlight responsive-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Project ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for building in buildings %}
+            <tr>
+                <td>{{ building.name }}</td>
+                <td>{{ building.address }}</td>
+                <td>{{ building.id }}</td>
+                <td>
+                    <a href="/buildings/{{ building.id }}/dashboard" target="_blank" class="tooltipped" data-position="top" data-tooltip="Open dashboard">
+                        <i class="material-icons">arrow_forward</i>
+                    </a>
 
-                <a href="#" class="tooltipped red-text" data-position="top" data-tooltip="Delete Building" onclick="deleteBuilding('{{ building.id }}'); return false;">
-                    <i class="material-icons">close</i>
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                    <a href="#" class="tooltipped red-text" data-position="top" data-tooltip="Remove building" onclick="deleteBuilding('{{ building.id }}'); return false;">
+                        <i class="material-icons">delete_outline</i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 <!-- Modal Structure for Adding New Building -->
 <div id="add-building-modal" class="modal">
     <div class="modal-content">
-        <h4>Add New Building</h4>
+        <h4>Register a Building</h4>
         <form action="/buildings/" method="post" id="myForm">
             <div class="input-field">
                 <input id="id" name="id" type="text" class="validate" required>
@@ -94,7 +100,9 @@
                 </div>
             </div>
          
-            <button type="submit" class="btn waves-effect waves-light">Submit</button>
+            <button type="submit" class="btn is-accent waves-effect waves-light">
+                <i class="material-icons left">save</i>Add to register
+            </button>
         </form>
     </div>
 </div>

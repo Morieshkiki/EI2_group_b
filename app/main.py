@@ -7,6 +7,8 @@ import os
 from app.routers.building_router import router as building_router
 from app.routers.sensor_router import router as sensor_router
 
+# this part uses Demo 1 (main.py): it creates the FastAPI app, includes the routers,
+# and redirects the home page ("/") to the buildings list.
 app = FastAPI()
 
 app.include_router(building_router)

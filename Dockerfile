@@ -1,3 +1,5 @@
+# generated using AI: builds the web app's Docker image — installs the Python
+# dependencies and starts the FastAPI server inside the container.
 FROM python:3.11-slim
 
 WORKDIR /app

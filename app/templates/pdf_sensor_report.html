@@ -1,51 +1,147 @@
 <!DOCTYPE html>
+<!-- generated using AI: the layout of the sensor PDF report (header, averages, chart,
+     readings table). The values are filled in by the report code in sensor_router.py. -->
 <html>
 <head>
     <meta charset="utf-8">
     <title>Sensor Report - {{ sensor.name }}</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        h1 { text-align: center; }
-        h2 { color: #333; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #aaa; padding: 8px; text-align: left; }
-        th { background-color: #eee; }
+        @page { margin: 1.4cm 1.5cm; }
+
+        body { font-family: Helvetica, Arial, sans-serif; color: #15171c; font-size: 11px; }
+
+        /* ---- masthead ---- */
+        .eyebrow {
+            font-family: Courier, monospace; font-size: 8px; letter-spacing: 3px;
+            color: #c2570c; text-transform: uppercase; margin: 0 0 2px;
+        }
+        h1 { font-size: 23px; margin: 0; color: #15171c; }
+        .rule { border-bottom: 2px solid #15171c; height: 0; margin: 8px 0 16px; }
+
+        /* ---- meta strip ---- */
+        table.meta { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+        table.meta td { padding: 2px 0; vertical-align: top; }
+        .k {
+            font-family: Courier, monospace; font-size: 8px; letter-spacing: 1px;
+            color: #6f6b60; text-transform: uppercase; width: 130px;
+        }
+        .v { font-size: 11px; color: #15171c; }
+
+        /* ---- section headings ---- */
+        h2 {
+            font-size: 11px; color: #15171c; text-transform: uppercase; letter-spacing: 2px;
+            border-left: 4px solid #c2570c; padding: 1px 0 1px 8px; margin: 22px 0 10px;
+        }
+
+        /* ---- KPI cards ---- */
+        table.kpis { width: 100%; border-collapse: collapse; }
+        table.kpis td { width: 50%; padding: 0 6px; }
+        .card { border: 1.2px solid #15171c; padding: 10px 14px; }
+        .card .lbl {
+            font-family: Courier, monospace; font-size: 8px; letter-spacing: 1px;
+            color: #6f6b60; text-transform: uppercase; margin-bottom: 4px;
+        }
+        .card .num { font-size: 26px; color: #15171c; }
+        .card .num .amber { color: #c2570c; }
+        .card .unit { font-size: 12px; color: #6f6b60; }
+
+        /* ---- chart frame ---- */
+        .chart-frame { border: 1.2px solid #15171c; padding: 6px; }
+        .chart-frame img { width: 100%; }
+
+        /* ---- data table ---- */
+        table.data { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        table.data th {
+            background-color: #15171c; color: #ffffff;
+            font-family: Courier, monospace; font-size: 8px; letter-spacing: 1px;
+            text-transform: uppercase; text-align: left; padding: 6px 8px;
+        }
+        table.data td {
+            border-bottom: 1px solid #ddd8cc; padding: 4px 8px;
+            font-family: Courier, monospace; font-size: 9.5px; color: #2a2e37;
+        }
+        table.data tr.alt td { background-color: #faf8f3; }
+
+        .foot {
+            margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd8cc;
+            font-family: Courier, monospace; font-size: 8px; letter-spacing: 1px;
+            color: #6f6b60; text-transform: uppercase;
+        }
+        .foot .right { float: right; }
     </style>
 </head>
 <body>
-    <h1>Sensor Report: {{ sensor.name }}</h1>
-    <p><strong>ID:</strong> {{ sensor.id }}</p>
-    <p><strong>Type:</strong> {{ sensor.type }}</p>
-    <p><strong>Building:</strong> {{ building_name }}</p>
 
-    <h2>Average Readings</h2>
-    <p><strong>Temperature:</strong> {{ avg_temp }} °C</p>
-    <p><strong>Humidity:</strong> {{ avg_hum }} %</p>
+    <p class="eyebrow">Telemetry &middot; Sensor Report</p>
+    <h1>{{ sensor.name }}</h1>
+    <div class="rule"></div>
 
-    <h2>Chart</h2>
+    <table class="meta">
+        <tr>
+            <td class="k">Sensor ID</td><td class="v">{{ sensor.id }}</td>
+            <td class="k">Range</td><td class="v">{{ range_label }}</td>
+        </tr>
+        <tr>
+            <td class="k">Type</td><td class="v">{{ sensor.type }}</td>
+            <td class="k">Resolution</td><td class="v">{{ bucket_label }} averages</td>
+        </tr>
+        <tr>
+            <td class="k">Building</td><td class="v">{{ building_name }}</td>
+            <td class="k">Samples</td><td class="v">{{ reading_count }} readings &rarr; {{ bucket_count }} points</td>
+        </tr>
+    </table>
+
+    <h2>Summary</h2>
+    <table class="kpis">
+        <tr>
+            <td>
+                <div class="card">
+                    <div class="lbl">Average temperature</div>
+                    <div class="num"><span class="amber">{{ avg_temp }}</span> <span class="unit">&deg;C</span></div>
+                </div>
+            </td>
+            <td>
+                <div class="card">
+                    <div class="lbl">Average humidity</div>
+                    <div class="num">{{ avg_hum }} <span class="unit">%</span></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <h2>Trend &mdash; {{ range_label }}</h2>
     {% if image_path %}
-    <img src="{{ image_path }}" style="width: 100%; max-height: 300px; margin-top: 10px;" />
+    <div class="chart-frame">
+        <img src="{{ image_path }}" />
+    </div>
     {% endif %}
 
-    <h2>Readings from the Last 24 Hours (Average Values in 15-Minute Slots)</h2>
-    <p><strong>Readings in last 24h:</strong> {{ readings | length }}</p>
-    <table>
+    <h2>Readings &mdash; {{ bucket_label }} averages (local time)</h2>
+    <table class="data">
         <thead>
             <tr>
-                <th>Timestamp</th>
-                <th>Temperature (°C)</th>
-                <th>Humidity (%)</th>
+                <th>Time ({{ tz_name }})</th>
+                <th>Temperature &deg;C</th>
+                <th>Humidity %</th>
             </tr>
         </thead>
         <tbody>
-        {% for r in readings %}
-            <tr>
-                <td>{{ r.timestamp }}</td>
+            {% for r in table_rows %}
+            <tr class="{% if loop.index is odd %}alt{% endif %}">
+                <td>{{ r.time }}</td>
                 <td>{{ r.temperature }}</td>
                 <td>{{ r.humidity }}</td>
             </tr>
-        {% endfor %}
+            {% else %}
+            <tr><td colspan="3">No readings in this range.</td></tr>
+            {% endfor %}
         </tbody>
     </table>
+
+    <div class="foot">
+        &copy; 2026 GroupB &middot; Smart City BIM
+        <span class="right">Generated {{ generated_at }} ({{ tz_name }})</span>
+    </div>
+
 </body>
 </html>

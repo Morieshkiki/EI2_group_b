@@ -7,6 +7,7 @@
     <title>xeokit Example</title>
     <link href="./css/pageStyle.css" rel="stylesheet"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
@@ -112,41 +113,45 @@
             font: normal 14px arial, serif;
         }
 
-    #add-sensor, #delete-sensor, #sensors-dashboard {
+    /* Sensor controls — top-right row, drafting-studio palette */
+    #sensor-controls {
         position: absolute;
         top: 60px;
-        left: 20px;
+        right: 20px;
         z-index: 1000;
-        padding: 10px 20px;
-        background-color: #28a745;
-        color: white;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    #sensor-controls a { line-height: 0; }
+
+    #add-sensor, #delete-sensor, #sensors-dashboard {
+        padding: 10px 18px;
+        color: rgb(255, 255, 255);
         border: none;
-        border-radius: 5px;
+        border-radius: 4px;
         cursor: pointer;
-        font-size: 16px;
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease;
     }
 
-    #delete-sensor {
-        top: 100px; /* so it's below the "Add Sensor" button */
-        background-color: #dc3545;
-    }
+    #add-sensor       { background-color: #c2570c; } /* construction amber */
+    #delete-sensor    { background-color: #a63a2b; } /* brick */
+    #sensors-dashboard{ background-color: #0f6e5c; } /* pine */
 
-    #sensors-dashboard {
-        top: 140px; /* so it's below the "Delete Sensor" button */
-        background-color: #007bff;
+    #add-sensor:hover, #delete-sensor:hover, #sensors-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 4px 4px 0 rgba(21, 23, 28, 0.25);
     }
-
-    #add-sensor:hover {
-        background-color: #218838;
-    }
-
-    #delete-sensor:hover {
-        background-color: #c82333;
-    }
-    
-    #sensors-dashboard:hover {
-        background-color: #0056b3;
-    }
+    #add-sensor:hover       { background-color: #97420a; }
+    #delete-sensor:hover    { background-color: #862c20; }
+    #sensors-dashboard:hover{ background-color: #0a5446; }
 
     #sensorForm {
         z-index: 5000;
@@ -173,11 +178,13 @@
 <div class="slideout-sidebar">
     <img class="info-icon" src="../images/logo.jpg"/><br>
     This viewer is created using the Xeokit-SDK package.</div>
-<button id="add-sensor">Add Sensor</button>
-<button id="delete-sensor">Delete Sensor</button>
-<a id="sensors-dashboard-link" target="_blank">
-    <button id="sensors-dashboard">Sensors Dashboard</button>
-</a>
+<div id="sensor-controls">
+    <button id="add-sensor">Add</button>
+    <button id="delete-sensor">Delete</button>
+    <a id="sensors-dashboard-link" target="_blank">
+        <button id="sensors-dashboard">Sensors List</button>
+    </a>
+</div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -386,11 +393,11 @@
         console.log(" Add Sensor button clicked");
         if (mode === "add") {
             mode = "info";
-            document.getElementById("add-sensor").textContent = "Add Sensor";
+            document.getElementById("add-sensor").textContent = "Add";
         } else {
             mode = "add";
-            document.getElementById("add-sensor").textContent = "Stop Adding";
-            document.getElementById("delete-sensor").textContent = "Delete Sensor";
+            document.getElementById("add-sensor").textContent = "Stop";
+            document.getElementById("delete-sensor").textContent = "Delete";
         }
     });
 
@@ -398,11 +405,11 @@
         console.log(" Delete Sensor button clicked");
         if (mode === "delete") {
             mode = "info";
-            document.getElementById("delete-sensor").textContent = "Delete Sensor";
+            document.getElementById("delete-sensor").textContent = "Delete";
         } else {
             mode = "delete";
-            document.getElementById("delete-sensor").textContent = "Stop Deleting";
-            document.getElementById("add-sensor").textContent = "Add Sensor";
+            document.getElementById("delete-sensor").textContent = "Stop";
+            document.getElementById("add-sensor").textContent = "Add";
         }
     });
 

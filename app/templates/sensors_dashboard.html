@@ -3,45 +3,50 @@
 {% block title %}Sensor Management{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col s12">
-        <h3 class="header">Sensors Dashboard - {{ building_name }}</h3>
+<div class="studio-head">
+    <div>
+        <p class="eyebrow">Telemetry / Sensors</p>
+        <h3>{{ building_name }} — Sensor Network</h3>
     </div>
 </div>
 
-<table class="highlight responsive-table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Coordinates</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% if sensors %}
-            {% for sensor in sensors %}
-            <tr id="row-{{ sensor.id }}">
-                <td>{{ sensor.id }}</td>
-                <td>{{ sensor.name }}</td>
-                <td>({{ sensor.sensor_coord_display | join(', ') }})</td>
-                <td>
-                    <a href="/sensors/{{ sensor.id }}" target="_blank" class="tooltipped" data-position="top" data-tooltip="View Sensor">
-                        <i class="material-icons">search</i>
-                    </a>
-                    <a href="#" class="tooltipped red-text" data-position="top" data-tooltip="Delete Sensor" onclick="deleteSensor('{{ sensor.id }}'); return false;">
-                        <i class="material-icons">close</i>
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        {% else %}
+<!-- this part uses Demo 3 (index.html) for the HTML table structure. -->
+<div class="panel">
+    <span class="panel-label">Deployed sensors</span>
+    <table class="highlight responsive-table">
+        <thead>
             <tr>
-                <td colspan="2">No sensors available.</td>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Coordinates</th>
+                <th>Actions</th>
             </tr>
-        {% endif %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            {% if sensors %}
+                {% for sensor in sensors %}
+                <tr id="row-{{ sensor.id }}">
+                    <td>{{ sensor.id }}</td>
+                    <td>{{ sensor.name }}</td>
+                    <td>({{ sensor.sensor_coord_display | join(', ') }})</td>
+                    <td>
+                        <a href="/sensors/{{ sensor.id }}" target="_blank" class="tooltipped" data-position="top" data-tooltip="Open sensor">
+                            <i class="material-icons">arrow_forward</i>
+                        </a>
+                        <a href="#" class="tooltipped red-text" data-position="top" data-tooltip="Remove sensor" onclick="deleteSensor('{{ sensor.id }}'); return false;">
+                            <i class="material-icons">delete_outline</i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4">No sensors deployed yet.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
 
 {% block scripts %}

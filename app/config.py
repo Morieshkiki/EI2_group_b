@@ -1,5 +1,7 @@
 import os
 
+# this part uses Demo 1 (config.py) for the MongoDB connection settings.
+# AI helped make them configurable through environment variables (used by Docker).
 MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'exercise_1')
 MONGO_DB_ADMIN = os.getenv('MONGO_DB_ADMIN', 'root')
 MONGO_DB_PASSWORD = os.getenv('MONGO_DB_PASSWORD', 'example')

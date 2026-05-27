@@ -3,9 +3,26 @@
 {% block title %}Sensor {{ sensor.name }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h4>Sensor: {{ sensor.name }}</h4>
-    
+<!-- AI helped here: the live chart asks the backend for readings at the chosen time
+     resolution (per second / minute / 10 min / hour) and shows them in local time;
+     the PDF button exports the report for a chosen time range. -->
+<div class="studio-head">
+    <div>
+        <p class="eyebrow">Telemetry / Device</p>
+        <h4>Sensor: {{ sensor.name }}</h4>
+    </div>
+    <div class="studio-toolbar">
+        <a class="btn amber darken-2 modal-trigger" href="#edit-sensor-modal">
+            <i class="material-icons left">edit</i>Modify
+        </a>
+        <button class="btn red" id="delete-sensor-btn">
+            <i class="material-icons left">delete</i>Remove sensor
+        </button>
+    </div>
+</div>
+
+<div class="panel">
+    <span class="panel-label">Device record</span>
     <table class="striped">
         <tbody>
             <tr>
@@ -26,33 +43,64 @@
             </tr>
         </tbody>
     </table>
+</div>
 
-    <div class="section">
-        <a class="btn amber darken-2 modal-trigger" href="#edit-sensor-modal">
-            <i class="material-icons left">edit</i> Edit
-        </a>
-        <button class="btn red" id="delete-sensor-btn">
-            <i class="material-icons left">delete</i> Delete
-        </button>
-        <a class="btn teal" href="/sensors/{{ sensor.id }}/report" target="_blank">
-            <i class="material-icons left">picture_as_pdf</i>Generate PDF Report
-        </a>
+<style>
+    .studio-controls {
+        display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: flex-end;
+        justify-content: space-between; margin-bottom: 6px;
+    }
+    .ctl-label {
+        display: block; font-family: "Space Mono", monospace; font-size: .62rem;
+        letter-spacing: .18em; text-transform: uppercase; color: #6f6b60; margin-bottom: 6px;
+    }
+    .studio-select {
+        font-family: "Space Mono", monospace; font-size: .8rem; color: #15171c;
+        background: #fff; border: 1.5px solid #15171c; border-radius: 2px;
+        padding: 9px 12px; cursor: pointer; min-width: 160px; display: block;
+    }
+    .studio-select:focus { outline: none; border-color: #c2570c; }
+    .export-row { display: flex; gap: 10px; align-items: flex-end; }
+    .export-row .btn { margin: 0; }
+</style>
+
+<div class="panel">
+    <span class="panel-label">Live readings</span>
+    <div class="studio-controls">
+        <div>
+            <span class="ctl-label">Resolution · live chart</span>
+            <select id="granularitySelector" class="studio-select">
+                <option value="second" selected>Per second</option>
+                <option value="minute">Per minute</option>
+                <option value="ten_minute">Per 10 minutes</option>
+                <option value="hour">Hourly</option>
+            </select>
+        </div>
+        <div class="export-row">
+            <div>
+                <span class="ctl-label">PDF report range</span>
+                <select id="reportRange" class="studio-select">
+                    <option value="5m">Last 5 minutes</option>
+                    <option value="10m">Last 10 minutes</option>
+                    <option value="30m">Last 30 minutes</option>
+                    <option value="1h">Last hour</option>
+                    <option value="3h">Last 3 hours</option>
+                    <option value="6h">Last 6 hours</option>
+                    <option value="12h">Last 12 hours</option>
+                    <option value="24h" selected>Last 24 hours</option>
+                    <option value="2d">Last 2 days</option>
+                    <option value="7d">Last 7 days</option>
+                </select>
+            </div>
+            <button type="button" class="btn teal" id="export-pdf-btn">
+                <i class="material-icons left">picture_as_pdf</i>Export PDF
+            </button>
+        </div>
+    </div>
+    <div class="chart-shell" style="position: relative; height: 340px; margin-top: 12px;">
+        <canvas id="sensorChart"></canvas>
     </div>
 </div>
-
-<div class="section">
-    <h5>Sensor Readings</h5>
-    <div class="input-field" style="max-width: 200px;">
-        <select id="readingLimitSelector">
-            <option value="10">Last 10</option>
-            <option value="20" selected>Last 20</option>
-            <option value="50">Last 50</option>
-        </select>
-        <label for="readingLimitSelector">Select Reading Range</label>
-        </div>
-    <canvas id="sensorChart" width="600" height="300"></canvas>
-</div>
-
 
 <!-- Modal for Editing Sensor -->
 <div id="edit-sensor-modal" class="modal">
@@ -71,7 +119,9 @@
          </select>
         <label for="edit_type">Type</label>
         </div>
-      <button type="submit" class="btn waves-effect waves-light">Save Changes</button>
+      <button type="submit" class="btn is-accent waves-effect waves-light">
+          <i class="material-icons left">save</i>Save
+      </button>
     </form>
   </div>
 </div>
@@ -94,25 +144,54 @@ document.addEventListener("DOMContentLoaded", function () {
     sensor = JSON.parse(document.getElementById("sensor-data").textContent);
 
     let chartInstance = null;
-    let currentLimit = 20;
+    let currentGranularity = "second";
 
-    const limitSelector = document.getElementById("readingLimitSelector");
-    limitSelector.addEventListener("change", () => {
-        currentLimit = parseInt(limitSelector.value);
+    const granularitySelector = document.getElementById("granularitySelector");
+    granularitySelector.addEventListener("change", () => {
+        currentGranularity = granularitySelector.value;
         if (sensor && sensor.id) {
             loadChart(sensor.id);
         }
     });
 
+    // Export PDF using the chosen range
+    const reportRange = document.getElementById("reportRange");
+    document.getElementById("export-pdf-btn").addEventListener("click", () => {
+        const range = reportRange ? reportRange.value : "24h";
+        window.open(`/sensors/${sensor.id}/report?range=${range}`, "_blank");
+    });
+
+    // Server timestamps are UTC; mark them as UTC so the browser shows local time.
+    // Fine resolutions show seconds; coarse ones show date/hour.
+    function toLocalLabel(ts, gran) {
+        const hasTz = /[zZ]|[+-]\d{2}:?\d{2}$/.test(ts);
+        const d = new Date(hasTz ? ts : ts + "Z");
+        if (gran === "hour") {
+            return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        }
+        if (gran === "ten_minute") {
+            return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+
+    // Soft vertical gradient fill under a line
+    function fillGradient(ctx2d, area, hex) {
+        const g = ctx2d.createLinearGradient(0, area.top, 0, area.bottom);
+        g.addColorStop(0, hex + "40");   // ~25% alpha near the line
+        g.addColorStop(1, hex + "05");   // fades to almost nothing at the axis
+        return g;
+    }
+
     async function loadChart(sensorId) {
-        const res = await fetch(`/sensors/readings/${sensorId}/json?limit=${currentLimit}`);
+        const res = await fetch(`/sensors/readings/${sensorId}/series?granularity=${currentGranularity}`);
         const data = await res.json();
 
-        const readings = data.readings || [];
+        const points = data.points || [];
 
-        const labels = readings.map(r => new Date(r.timestamp).toLocaleTimeString());
-        const tempData = readings.map(r => r.temperature);
-        const humData = readings.map(r => r.humidity);
+        const labels = points.map(p => toLocalLabel(p.timestamp, currentGranularity));
+        const tempData = points.map(p => p.temperature);
+        const humData = points.map(p => p.humidity);
 
         const ctx = document.getElementById("sensorChart").getContext("2d");
 
@@ -121,45 +200,105 @@ document.addEventListener("DOMContentLoaded", function () {
             chartInstance.data.datasets[0].data = tempData;
             chartInstance.data.datasets[1].data = humData;
             chartInstance.update();
-        } else {
-            chartInstance = new Chart(ctx, {
-                type: "line",
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: "Temperature (°C)",
-                            data: tempData,
-                            borderColor: "red",
-                            fill: false
-                        },
-                        {
-                            label: "Humidity (%)",
-                            data: humData,
-                            borderColor: "blue",
-                            fill: false
+            return;
+        }
+
+        const AMBER = "#c2570c", STEEL = "#3f5765", INK = "#15171c", MUTED = "#6f6b60";
+        const mono = "'Space Mono', monospace";
+
+        const lineDataset = (label, data, color) => ({
+            label: label,
+            data: data,
+            borderColor: color,
+            pointBackgroundColor: color,
+            pointBorderColor: "#ffffff",
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            borderWidth: 2.5,
+            tension: 0.35,
+            fill: true,
+            backgroundColor: (c) => {
+                const { ctx: cx, chartArea } = c.chart;
+                if (!chartArea) return "transparent";
+                return fillGradient(cx, chartArea, color);
+            }
+        });
+
+        chartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    lineDataset("TEMPERATURE °C", tempData, AMBER),
+                    lineDataset("HUMIDITY %", humData, STEEL)
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                layout: { padding: 6 },
+                plugins: {
+                    legend: {
+                        position: "top",
+                        align: "end",
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: "rectRot",
+                            boxWidth: 10,
+                            color: INK,
+                            font: { family: mono, size: 11, weight: "700" }
                         }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top' }
                     },
-                    scales: {
-                        y: { beginAtZero: true }
+                    tooltip: {
+                        backgroundColor: INK,
+                        titleColor: "#ffffff",
+                        titleFont: { family: mono, size: 11 },
+                        bodyColor: "#ffffff",
+                        bodyFont: { family: mono, size: 12 },
+                        borderColor: AMBER,
+                        borderWidth: 1,
+                        cornerRadius: 2,
+                        padding: 10
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "TIME OF DAY",
+                            color: MUTED,
+                            font: { family: mono, size: 10, weight: "700" }
+                        },
+                        grid: { display: false },
+                        ticks: {
+                            color: MUTED,
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8,
+                            font: { family: mono, size: 10 }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: "rgba(21,23,28,0.07)" },
+                        border: { display: false },
+                        ticks: {
+                            color: MUTED,
+                            font: { family: mono, size: 10 }
+                        }
                     }
                 }
-            });
-        }
+            }
+        });
     }
 
     M.Modal.init(document.querySelectorAll('.modal'));
-    M.FormSelect.init(document.querySelectorAll('select'));
+    M.FormSelect.init(document.querySelectorAll('#editSensorForm select'));
 
     if (sensor && sensor.id) {
         loadChart(sensor.id);
-        setInterval(() => loadChart(sensor.id), 30000);
+        setInterval(() => loadChart(sensor.id), 2000);
     }
 
     document.getElementById("editSensorForm").addEventListener("submit", function (e) {

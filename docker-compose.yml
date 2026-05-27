@@ -1,4 +1,6 @@
 # Use root/example as user/password credentials
+# written with the help of AI: defines and connects the services that run together —
+# the web app, the MongoDB database, the database admin UI, and the 3D model viewer.
 services:
 
   app:

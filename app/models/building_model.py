@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 
+# this part uses Demo 1 (building_model.py) for the building data model.
 class BuildingModel(BaseModel):
     id: str
     name: str
