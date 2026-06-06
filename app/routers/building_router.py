@@ -1,3 +1,8 @@
+
+# the following code is largely based on the building_router.py from Demo 1, but with additional endpoints
+# the additional code was in part written using the https://docs.python.org/3/ as reference and Autocomplete and to fix bugs AI was used in a manner like: "Fix issue x" or "add feature y"
+
+
 from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Body, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, StreamingResponse

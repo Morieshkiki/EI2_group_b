@@ -1,4 +1,6 @@
 // convert.js
+// FS - This was done to convert the sample IFC file to XKT format for performance
+// FS - Copilot and Autocomplete were used to generate this file, but it was also based on the example code from the xeokit-convert package documentation:
 import { convert2xkt } from '@xeokit/xeokit-convert';
 import path from 'path';
 

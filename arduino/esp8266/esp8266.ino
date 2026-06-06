@@ -1,4 +1,4 @@
-// based on Demo 1 (arduino/esp8266.ino), with help from AI.
+// based on Demo 1 (arduino/esp8266.ino), with help from AI. AI was used in a manner like: "Fix issue x" or "add feature y"
 // Purpose: reads the DHT11 temperature/humidity sensor on the ESP8266 and sends the
 // values to the web app over WiFi every couple of seconds.
 #include "DHT.h"
