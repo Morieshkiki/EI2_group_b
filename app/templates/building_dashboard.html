@@ -1,3 +1,10 @@
+
+<!--
+Here the building specific dashboard was implemented     
+The html infos from the tutorium were used in tandem with the Copilot Autocomplete
+     To fix bugs AI was used in a manner like: "Fix issue x" or "add feature y"
+    -->
+
 {% extends "base.html" %}
 
 {% block title %}Building Dashboard{% endblock %}
@@ -129,7 +136,8 @@
             <!-- Form actions -->
             <div class="modal-footer">
                 <a href="#!" class="modal-close btn red lighten-1" id="cancel-edit-btn">Discard</a>
-                <button type="button" class="btn orange" id="admin-access-btn">Unlock (admin)</button>
+                <button type="button" class="btn orange" id="admin-access-btn">Unlock (admin)</button> 
+               <!--  this button is for testing the admin unlock functionality, it will prompt for a password and if correct, it will enable the form fields for editing --> 
                 <button type="submit" class="btn waves-effect waves-light">Save</button>
             </div>
         </form>
@@ -159,7 +167,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return fetch(`/buildings/${building.id}/unlock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user: 'demo_user', is_admin: false })
+            body: JSON.stringify({ user: 'demo_user', is_admin: false }) <arguments
         });
     }
 

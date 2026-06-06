@@ -1,4 +1,4 @@
-// based on Demo 1 (arduino/esp8266.ino), with help from AI.
+// based on Demo 1 (arduino/esp8266.ino), with help from AI. AI was used in a manner like: "Fix issue x" or "add feature y"
 // Purpose: reads the DHT11 temperature/humidity sensor on the ESP8266 and sends the
 // values to the web app over WiFi every couple of seconds.
 #include "DHT.h"
@@ -9,7 +9,7 @@
 #define DHTPIN 13
 #define DHTTYPE DHT11
 
-const char* sensorId = "1779871634840";
+const char* sensorId = "1780749519034";
 
 const String serverIp = "10.36.214.122";
 const int serverPort = 8000;

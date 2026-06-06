@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html> 
+<!-- this is like the layout of the PDF report, it uses HTML and CSS for styling, and Jinja2 syntax to insert dynamic data -->
 <head>
     <meta charset="utf-8">
     <title>Building Report - {{ building.name }}</title>
@@ -15,8 +15,8 @@
     <h1>Building Report: {{ building.name }}</h1>
     <p><strong>Address:</strong> {{ building.address }}</p>
     <p><strong>Floors:</strong> {{ building.floors }}</p>
-    <p><strong>Has Elevator:</strong> {{ "Yes" if building.has_elevator else "No" }}</p>
-    <p><strong>Has Parking:</strong> {{ "Yes" if building.has_parking else "No" }}</p>
+    <p><strong>Has Elevator:</strong> {{ "Yes" if building.has_elevator else "No" }}</p> <!-- AI-generated code for displaying boolean values in a user-friendly way -> converting True/False into "Yes/No" -->
+    <p><strong>Has Parking:</strong> {{ "Yes" if building.has_parking else "No" }}</p> <!-- AI-generated code for displaying boolean values in a user-friendly way -> converting True/False into "Yes/No" -->
 
     <h2>Sensors</h2>
     <table>
@@ -35,11 +35,12 @@
                 <td>{{ s.id }}</td>
                 <td>{{ s.name }}</td>
                 <td>{{ s.type }}</td>
-                <td>{{ s.avg_temp or 'N/A' }}</td>
-                <td>{{ s.avg_humidity or 'N/A' }}</td>
+                <td>{{ s.avg_temp or 'N/A' }}</td> <!-- AI-assisted refinement after requesting improvement for handling missing sensor data -->
+                <td>{{ s.avg_humidity or 'N/A' }}</td> <!-- AI-assisted refinement after requesting improvement for handling missing sensor data -->
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </body>
 </html>
+

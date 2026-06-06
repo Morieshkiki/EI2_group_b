@@ -1,16 +1,16 @@
-<!DOCTYPE html>
-<!-- generated using AI: the layout of the sensor PDF report (header, averages, chart,
-     readings table). The values are filled in by the report code in sensor_router.py. -->
+<!DOCTYPE html>  
+<!-- this is like the layout of the PDF report, it uses HTML and CSS for styling, and Jinja2 syntax to insert dynamic data -->
 <html>
 <head>
     <meta charset="utf-8">
     <title>Sensor Report - {{ sensor.name }}</title>
+<!-- CSS styles for the PDF report, defining the layout and appearance of the content -->
     <style>
-        @page { margin: 1.4cm 1.5cm; }
+        @page { margin: 1.4cm 1.5cm; } /* set page margins for PDF output */
 
-        body { font-family: Helvetica, Arial, sans-serif; color: #15171c; font-size: 11px; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #15171c; font-size: 11px; } /* base styles for the report body, using a clean sans-serif font and a dark color for text */
 
-        /* ---- masthead ---- */
+        /* ---- report header ---- */
         .eyebrow {
             font-family: Courier, monospace; font-size: 8px; letter-spacing: 3px;
             color: #c2570c; text-transform: uppercase; margin: 0 0 2px;
@@ -18,7 +18,7 @@
         h1 { font-size: 23px; margin: 0; color: #15171c; }
         .rule { border-bottom: 2px solid #15171c; height: 0; margin: 8px 0 16px; }
 
-        /* ---- meta strip ---- */
+        /* ---- report meta data (basic info) ---- */
         table.meta { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
         table.meta td { padding: 2px 0; vertical-align: top; }
         .k {
@@ -33,7 +33,7 @@
             border-left: 4px solid #c2570c; padding: 1px 0 1px 8px; margin: 22px 0 10px;
         }
 
-        /* ---- KPI cards ---- */
+        /* ---- key metrics ---- */
         table.kpis { width: 100%; border-collapse: collapse; }
         table.kpis td { width: 50%; padding: 0 6px; }
         .card { border: 1.2px solid #15171c; padding: 10px 14px; }

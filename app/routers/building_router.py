@@ -1,3 +1,8 @@
+
+# the following code is largely based on the building_router.py from Demo 1, but with additional endpoints
+# the additional code was in part written using the https://docs.python.org/3/ as reference and Autocomplete and to fix bugs AI was used in a manner like: "Fix issue x" or "add feature y"
+
+
 from fastapi import APIRouter, Request, UploadFile, File, HTTPException, Body, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -5,9 +10,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from app.models.building_model import BuildingModel as Building
 from app.util import mongo_db_connector
 
-from app.util.pdf_generator import html_to_pdf
-from xhtml2pdf import pisa
-from io import BytesIO
+from app.util.pdf_generator import html_to_pdf # this is the function we created in pdf_generator.py to convert HTML to PDF, it uses xhtml2pdf under the hood
+from xhtml2pdf import pisa # library for converting HTML to PDF
+from io import BytesIO# temporary in-memory file for PDF output
 # Import necessary libraries FOR pessimistic locking
 from datetime import datetime, timedelta
 from fastapi import Body,HTTPException
@@ -345,7 +350,8 @@ async def generate_building_report(request: Request, building_id: str):
     pdf = BytesIO()
     pisa.CreatePDF(src=html, dest=pdf)
     pdf.seek(0)
-
+# AI-assisted implementation after asking how generated PDFs can be
+# returned directly in FastAPI without saving temporary files
     return StreamingResponse(pdf, media_type="application/pdf", headers={
         "Content-Disposition": f"inline; filename=building_{building_id}_report.pdf"
     })
@@ -383,7 +389,7 @@ async def lock_building(building_id: str, lock_info: dict = Body(...)):
     }
     """
     user = lock_info.get("user")
-    is_admin = lock_info.get("is_admin", False)
+    is_admin = lock_info.get("is_admin", False) # this is a simple way to indicate if the user is an admin, in a real application you would have proper authentication and role management
 
     buildings_collection = mongo_db_connector.init_db("buildings")
     building = buildings_collection.find_one({"id": building_id})
@@ -422,7 +428,7 @@ async def unlock_building(building_id: str, unlock_info: dict = Body(...)):
     }
     """
     user = unlock_info.get("user")
-    is_admin = unlock_info.get("is_admin", False)
+    is_admin = unlock_info.get("is_admin", False) # this is a simple way to indicate if the user is an admin, in a real application you would have proper authentication and role management
 
     buildings_collection = mongo_db_connector.init_db("buildings")
     building = buildings_collection.find_one({"id": building_id})
