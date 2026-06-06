@@ -9,7 +9,7 @@
 #define DHTPIN 13
 #define DHTTYPE DHT11
 
-const char* sensorId = "1779871634840";
+const char* sensorId = "1780749519034";
 
 const String serverIp = "10.36.214.122";
 const int serverPort = 8000;
