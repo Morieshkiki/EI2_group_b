@@ -1,3 +1,9 @@
+
+# the following code is again structurally based on the building_router.py from Demo 1, but now for the sensors
+# the additional code was in part written using the https://docs.python.org/3/ as reference and Autocomplete and to fix bugs AI was used in a manner like: "Fix issue x" or "add feature y"
+
+
+
 from fastapi import APIRouter, Request, HTTPException, Depends
 from fastapi.templating import Jinja2Templates
 from pymongo import MongoClient
