@@ -1,38 +1,80 @@
-# INF II Demo(s) 
+# INF II — Smart City BIM
 
-# Database Setup 
-You can setup a mongo db instance as a standalone server on your own physical machine, or use a container for that.
+A FastAPI web app for managing buildings and sensors, with a 3D BIM viewer (xeokit),
+IFC→XKT conversion, MongoDB storage, and ESP8266 (DHT11) sensors that send live readings.
 
-## Setup for running the demo with containers 
+Everything runs in Docker — you do **not** need to install Python, Node.js, or MongoDB
+yourself. Docker builds them inside the containers from the `Dockerfile` and
+`docker-compose.yml`.
 
-1. Install [Docker Desktop](https://www.docker.com/get-started/) 
-2. Install [python](https://www.python.org/)
-    1. generate virtual environment in this folder via ```python -m venv .venv``` also ```Remove-Item -Recurse -Force .venv``` for reinstalls
-    1. install dependencies in the new venv (using a new terminal window) ```pip install -r requirements.txt```
-3. Initialize mongodb, mongo express and the xeokit viewer using ```docker compose up -d```
-4. run fastapi app via uvicorn using ```uvicorn app.main:app --reload```
-    1. This may also be necessary to ensure the Arduinos can access ```uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload```
-5. Service is available on [http://127.0.0.1:8000](http://127.0.0.1:8000) 
-6. API Documentation is available under [/docs](http://127.0.0.1:8000/docs)
-7. Once a sensor is placed in a building, copy the sensor ID from the sensor dashboard and paste it into the file testDataSend_sensor.py in SENSOR_ID.
-8. Initialize the artifical sensor readings by opening a terminal window, navigating to the project directory and running testDataSend_sensor.py (python testDataSend_sensor.py)
+## Run the app
 
-## Running the tests
+1. Install [Docker Desktop](https://www.docker.com/get-started/) (and make sure it is running).
+2. Clone this repository and open a terminal in the project folder.
+3. Start everything with one command:
+   ```
+   docker compose up -d
+   ```
+   The first run takes a few minutes (it downloads images and builds the app +
+   viewer). Later runs start in seconds.
 
-The test suite lives in `tests/` and uses pytest with an in-process ASGI client that talks to MongoDB. Make sure the containers are running (`docker compose up -d`) and the dependencies are installed, then run from the project root:
+That's it. The following services are then available:
+
+| Service | URL | What it is |
+|---|---|---|
+| Web app | [http://127.0.0.1:8000](http://127.0.0.1:8000) | The main application |
+| API docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Interactive Swagger UI |
+| 3D viewer | [http://127.0.0.1:8080](http://127.0.0.1:8080) | xeokit BIM viewer |
+| DB admin | [http://127.0.0.1:8081](http://127.0.0.1:8081) | Mongo Express (browse the database) |
+
+## Stopping
 
 ```
-pytest
+docker compose down
 ```
+This stops and removes the containers. Your database (buildings, sensors, readings)
+is kept safe in the `mongo_data` volume, so it is still there next time you start.
 
-## Arduino firmware (ESP8266 sensor)
+> Do **not** add `-v` to `docker compose down` — that would delete the database volume.
 
-The `arduino/` folder contains the ESP8266 sketches that read a DHT11 sensor and POST readings to the app. Before flashing, open the sketch and set your own WiFi credentials and the IP of the machine running the app:
+## Using the 3D model viewer (IFC)
 
+1. Create a building in the app.
+2. Open the building's dashboard and **upload an IFC file**.
+3. Click **convert** — the app converts the IFC to XKT (this runs inside the app
+   container via Node.js) and displays the 3D model.
+
+## Sensors (ESP8266 / DHT11)
+
+The `arduino/` folder contains the ESP8266 sketches that read a DHT11 sensor and POST
+readings to the app.
+
+1. Place a sensor on a building in the app, then copy its **sensor ID** from the
+   sensor dashboard.
+2. Open `arduino/esp8266/esp8266.ino` and set your WiFi credentials, the sensor ID,
+   and the IP of the machine running the app:
+   ```cpp
+   const char* sensorId = "<sensor-id-from-dashboard>";
+   const String serverIp = "<your-server-ip>";   // e.g. 192.168.2.103
+   const String ssid = "YOUR_WIFI_SSID";
+   const String password = "YOUR_WIFI_PASSWORD";
+   ```
+3. Flash the sketch. The ESP8266 connects to WiFi on its own and starts sending
+   readings to `http://<server-ip>:8000/sensors/data`.
+
+The ESP8266 and the server must be on the **same network**. The app container already
+listens on `0.0.0.0:8000`, so it is reachable from other devices on the LAN using your
+machine's WiFi IP address.
+
+> Tip: `arduino/esp8266_wifiscan` lists nearby WiFi networks and
+> `arduino/esp8266_conntest` checks whether the board can reach the server — both are
+> handy for debugging connection problems. The ESP8266 only supports 2.4 GHz WiFi
+> (not 5 GHz) with WPA2.
+
+## Rebuilding after code changes
+
+If you change the app code or dependencies, rebuild the app image without touching the
+database:
 ```
-const String ssid = "YOUR_WIFI_SSID";
-const String password = "YOUR_WIFI_PASSWORD";
-const String serverIp = "<your-server-ip>";
+docker compose up -d --build app
 ```
-
-The ESP8266 must be on the same network as the server, which should be started with `--host 0.0.0.0` (see step 4 above).  
