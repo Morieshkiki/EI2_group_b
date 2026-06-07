@@ -23,7 +23,6 @@ COPY package.json package-lock.json ./
 RUN npm install
 
 COPY app ./app
-COPY run.py .
 
 EXPOSE 8000
 
